@@ -14,7 +14,7 @@
     },
     "packages/gkit": {
       "name": "gkit",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "bin": {
         "gkit": "bin/gkit.js",
       },
@@ -22,7 +22,7 @@
         "@standard-schema/spec": "^1.0.0",
         "@valibot/to-json-schema": "^1.6.0",
         "ajv": "^8.20.0",
-        "argc": "github:ethan-huo/argc#v7.11.0",
+        "argc": "github:ethan-huo/argc#v7.11.1",
         "dotenv": "^17.2.2",
         "google-auth-library": "^10.9.0",
         "valibot": "^1.2.0",
@@ -42,7 +42,7 @@
     "@types/node": "^25.6.0",
     "@valibot/to-json-schema": "^1.6.0",
     "ajv": "^8.20.0",
-    "argc": "github:ethan-huo/argc#v7.11.0",
+    "argc": "github:ethan-huo/argc#v7.11.1",
     "bun-types": "^1.3.13",
     "dataforseo-client": "^2.0.25",
     "dotenv": "^17.2.2",
@@ -169,7 +169,7 @@
 
     "ajv": ["ajv@8.20.0", "", { "dependencies": { "fast-deep-equal": "^3.1.3", "fast-uri": "^3.0.1", "json-schema-traverse": "^1.0.0", "require-from-string": "^2.0.2" } }, "sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA=="],
 
-    "argc": ["@celados/argc@github:ethan-huo/argc#1463e0b", { "dependencies": { "oxc-parser": "0.137.0", "yaml": "2.9.0" }, "peerDependencies": { "@standard-schema/spec": "^1.0.0" } }, "ethan-huo-argc-1463e0b", "sha512-UnpEGhU0d22g7TG62Me7/8XU9ZmQOMziARXnDnxW+fiFlAYg2y8IJ8E7+LughYYDg//I4FlqVk3cDiGGHStx4A=="],
+    "argc": ["@celados/argc@github:ethan-huo/argc#5d52bd5", { "dependencies": { "oxc-parser": "0.137.0", "yaml": "2.9.0" }, "peerDependencies": { "@standard-schema/spec": "^1.0.0" } }, "ethan-huo-argc-5d52bd5", "sha512-ezA721dld0eCDsgTKcCDTaAzpBpst/li5SZL9i3s3i/j3wVuCpv8uiOa1+kNZY5FZDc2TJO+R/HD+EKVbjhVYg=="],
 
     "assertion-error": ["assertion-error@2.0.1", "", {}, "sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA=="],
 
