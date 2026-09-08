@@ -1,12 +1,5 @@
 import { constants } from "node:fs";
-import {
-  copyFile,
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
@@ -67,7 +60,16 @@ try {
   const globalDirectory = join(consumerDirectory, "global");
   const globalBinDirectory = join(consumerDirectory, "bin");
   await runCommand(
-    ["bun", "add", "--global", `gkit@${tarballPath}`],
+    [
+      "bun",
+      "add",
+      "--global",
+      "--registry",
+      "https://registry.npmjs.org",
+      "--network-concurrency",
+      "8",
+      `gkit@${tarballPath}`,
+    ],
     consumerDirectory,
     {
       BUN_INSTALL_GLOBAL_DIR: globalDirectory,
@@ -85,6 +87,41 @@ try {
   }
 
   const gkit = join(globalBinDirectory, "gkit");
+  await runCommand([gkit, "--schema", "site"], consumerDirectory);
+  const isolatedConfig = join(consumerDirectory, "config");
+  const siteProfile = join(isolatedConfig, "gkit", "profiles", "package-test");
+  await mkdir(siteProfile, { recursive: true });
+  await writeFile(
+    join(siteProfile, "..", "package-test.json"),
+    JSON.stringify({ version: 1, name: "package-test", providers: {} }),
+  );
+  await writeFile(
+    join(siteProfile, "site.json"),
+    JSON.stringify({
+      version: 1,
+      site: "example.test",
+      origins: ["https://example.test"],
+      seeds: ["https://example.test/"],
+      github: { repository: "fixture/site" },
+    }),
+  );
+  const discovery = await runCommand(
+    [
+      gkit,
+      "--profile",
+      "package-test",
+      "site",
+      "discover",
+      "--dry-run",
+      "--out",
+      join(consumerDirectory, "discovery"),
+    ],
+    consumerDirectory,
+    { XDG_CONFIG_HOME: isolatedConfig },
+  );
+  if (JSON.parse(discovery.stdout).data?.status !== "prepared") {
+    throw new Error("The installed artifact could not load the site discovery runtime.");
+  }
   await runCommand([gkit, "--schema", "gsc"], consumerDirectory);
   const described = await runCommand(
     [gkit, "describe", "--id", "gsc.properties.list"],
@@ -153,7 +190,9 @@ async function writeReleaseAssets(
   const stablePath = join(destination, stableName);
   await copyFile(tarballPath, exactPath, constants.COPYFILE_EXCL);
   await copyFile(tarballPath, stablePath, constants.COPYFILE_EXCL);
-  const digest = createHash("sha256").update(await readFile(tarballPath)).digest("hex");
+  const digest = createHash("sha256")
+    .update(await readFile(tarballPath))
+    .digest("hex");
   await writeFile(
     join(destination, "SHA256SUMS"),
     `${digest}  ${exactName}\n${digest}  ${stableName}\n`,

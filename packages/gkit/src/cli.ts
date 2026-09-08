@@ -139,6 +139,14 @@ export async function main(
       return;
     }
 
+    if (command.kind === "site") {
+      const { executeSite } = await import("./site/execute");
+      const envelope = await executeSite(command, abortController.signal);
+      await emitter.writeEnvelope(envelope);
+      process.exitCode = abortController.signal.aborted ? 130 : envelope.ok ? 0 : 1;
+      return;
+    }
+
     if (command.kind === "docs") {
       if (
         command.provider &&

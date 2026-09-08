@@ -51,6 +51,7 @@ const profileDocumentSchema = strictObject({
   version: literal(1),
   name: pipe(string(), regex(PROFILE_SLUG_PATTERN)),
   providers: record(pipe(string(), regex(PROVIDER_ID_PATTERN)), providerProfileSchema),
+  site: optional(strictObject({ configFile: string() })),
 });
 
 const dataForSeoConfigSchema = strictObject({
@@ -118,6 +119,7 @@ export type LoadedProfile = {
   version: 1;
   name: string;
   path: string;
+  site?: { configFile: string };
   providers: Readonly<Record<string, ProviderProfile>>;
 };
 
@@ -254,6 +256,7 @@ export async function loadProfile(
     version: 1,
     name: parsed.output.name,
     path,
+    ...(parsed.output.site ? { site: Object.freeze(parsed.output.site) } : {}),
     providers: Object.freeze(providers),
   });
 }
