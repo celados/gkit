@@ -1,6 +1,8 @@
+import { parseSiteArgs, type SiteCommand } from "./site/commands";
 import { GkitFailure } from "./envelope";
 
 export type ParsedCommand =
+  | SiteCommand
   | { kind: "help" }
   | { kind: "schema"; selector: string | null }
   | { kind: "skill"; path: string | null }
@@ -199,6 +201,8 @@ export function parseArgs(argv: string[]): ParsedCommand {
     return { kind: "docs", provider: optionalString(flags, "--provider") };
   }
 
+  if (rest[0] === "site") return parseSiteArgs(rest.slice(1), profileFlag);
+
   if (rest[0] === "ledger") {
     if (profileFlag) invalid("ledger commands do not load a profile.");
     if (rest.length === 1) return { kind: "ledger-status" };
@@ -345,6 +349,15 @@ export function renderHelp(): string {
     "  gkit --profile <app> hubspot doctor",
     "  gkit --profile <app> hubspot api call --operation-id <id> --input @request.json --out <path> --dry-run",
     "  gkit --profile <app> hubspot api call --operation-id <id> --input @request.json --out <path>",
+    "",
+    "Site facts:",
+    "  gkit --schema site",
+    "  gkit --profile <app> site doctor",
+    "  gkit --profile <app> site discover --out <new-directory>",
+    "  gkit --profile <app> site snapshot --build .output --revision <sha> --context <label> --out <new-directory>",
+    "  gkit site audit <snapshot> [--out <file>]",
+    "  gkit site diff <snapshot-a> <snapshot-b> [--out <file>]",
+    "  gkit --profile <app> site explain <snapshot-a> <snapshot-b> --model <id> --out <file>",
     "",
     "Spend ledger:",
     "  gkit ledger",

@@ -1,3 +1,4 @@
+import { siteRouter } from "./site/schema";
 import { toStandardJsonSchema } from "@valibot/to-json-schema";
 import { c, generateSchema, group, selectSchema, type Router } from "argc";
 import * as v from "valibot";
@@ -35,6 +36,7 @@ export function buildGkitSchema(
   }
 
   return {
+    site: siteRouter,
     describe: c
       .meta({
         description: "Capability details.",
@@ -230,8 +232,14 @@ export function renderGkitSchema(
 ): string {
   const root = buildGkitSchema(manifest);
   if (!selector) {
+    const compactRoot = Object.fromEntries(
+      Object.entries(root).filter(([name]) => name !== "site"),
+    );
     return `${schemaPreamble()}${compactRootSchema(
-      rewriteArgcExamples(generateSchema(root, { name: "gkit" }), manifest),
+      rewriteArgcExamples(generateSchema(compactRoot, { name: "gkit" }), manifest).replace(
+        "type Gkit = {",
+        "type Gkit = {\n  /** gkit --schema site */\n  site: {}",
+      ),
     )}\n`;
   }
 

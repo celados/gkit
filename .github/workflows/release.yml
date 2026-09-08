@@ -216,6 +216,7 @@ jobs:
           done
           [[ "$installed" == "true" ]]
           "$BUN_INSTALL_BIN/gkit" --schema gsc >/dev/null
+          "$BUN_INSTALL_BIN/gkit" --schema site >/dev/null
           "$BUN_INSTALL_BIN/gkit" describe --id gsc.properties.list \
             | jq -e '.id == "gsc.properties.list"' >/dev/null
           docs_dir=$("$BUN_INSTALL_BIN/gkit" docs --provider gsc)
