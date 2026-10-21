@@ -1,7 +1,7 @@
 {
   "version": 1,
   "provider": "gsc",
-  "revision": "2026-07-14.slice4.gsc.2",
+  "revision": "2026-10-21.gsc.3",
   "source": {
     "url": "https://searchconsole.googleapis.com/$discovery/rest?version=v1",
     "revision": "2026-07-14-reviewed-contract",
@@ -80,8 +80,9 @@
       "path": "/webmasters/v3/sites/{siteUrl}/sitemaps/{feedpath}",
       "method": "put",
       "operationId": "sitemaps.submit",
-      "exposure": "inventory",
-      "reason": "Write operation is outside Slice 4."
+      "exposure": "executable",
+      "capabilityId": "gsc.sitemaps.submit",
+      "reason": "Reviewed adapter, input, effect, and response contracts are committed."
     }
   ]
 }

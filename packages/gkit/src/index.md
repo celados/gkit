@@ -33,7 +33,8 @@ gkit --profile my-app gsc api call --operation-id gsc.properties.list --input @r
 ```
 
 `--profile` wins over `GKIT_PROFILE`. DataForSEO spend calls also need
-`--allow-spend` and `--max-spend-usd`. Default artifact behavior is
+`--allow-spend` and `--max-spend-usd`. Write capabilities such as
+`gsc.sitemaps.submit` need `--allow-write`, including on `--dry-run`. Default artifact behavior is
 no-replace; add `--force` only after reviewing the destination.
 
 ## Anti-Patterns
@@ -45,3 +46,4 @@ no-replace; add `--force` only after reviewing the destination.
 | Skip doctor before a live request | `gkit --profile <app> <provider> doctor` | Fail closed on missing config or secrets |
 | Pipe a provider payload into context | Persist with `--out` and re-read | stdout is an envelope; the bulk is a file |
 | Merge two App profiles in one process | One profile per invocation | Binding is exclusive |
+| Add `--allow-write` to reads or by habit | Only for a reviewed write after its dry-run | Writes change provider state |

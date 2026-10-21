@@ -9,14 +9,17 @@ import {
   type ArtifactReservation,
 } from "./artifact";
 import { type EnvelopeMeta, GkitFailure, SecretRegistry, toFailureEnvelope } from "./envelope";
+import { evaluateEffects } from "./effects";
 import type { ExecuteResult } from "./execute";
 import {
   getManifestRecord,
   ManifestError,
   type LoadedExecutableManifest,
+  type ManifestRecord,
   validateManifestInput,
 } from "./manifest";
 import {
+  getProviderEnvironment,
   getProviderProfile,
   loadProfile,
   loadProfileEnvironment,
@@ -32,13 +35,14 @@ export type ReadProviderCallCommand = {
   profileFlag: string | null;
   operationId: string;
   input: string;
+  allowWrite?: boolean;
   out: string | null;
   force: boolean;
   dryRun: boolean;
 };
 
 export type ReadProviderRequestPlan = {
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "PUT";
   endpoint: string;
   diagnosticUrl?: string;
 };
@@ -56,6 +60,7 @@ export type ReadProviderSpec<TConfig, TOperation, TCredentials> = {
   plan(operation: TOperation, config: TConfig): ReadProviderRequestPlan;
   prepareCredentials(options: {
     profile: LoadedProfile;
+    effects: ManifestRecord["effects"];
     resolvedSecrets: Readonly<Record<string, string>>;
     readFile: typeof readFile;
     secrets: SecretRegistry;
@@ -66,7 +71,7 @@ export type ReadProviderSpec<TConfig, TOperation, TCredentials> = {
     credentials: TCredentials;
     signal: AbortSignal;
   }): Promise<RawJsonDispatchResult>;
-  artifactFormat: string;
+  artifactFormat: string | ((operation: TOperation) => string);
 };
 
 export type ReadProviderExecuteDependencies = {
@@ -130,10 +135,14 @@ export async function executeReadProviderCall<TConfig, TOperation, TCredentials>
         message: `The ${options.spec.provider} manifest references an unavailable reviewed adapter.`,
       });
     }
-    if (record.effects.length !== 1 || record.effects[0] !== "read" || record.cost) {
+    if (
+      record.effects.length !== 1 ||
+      (record.effects[0] !== "read" && record.effects[0] !== "write") ||
+      record.cost
+    ) {
       throw new GkitFailure({
         code: "INTERNAL_ERROR",
-        message: `${options.spec.provider} Slice 4 capabilities must remain read-only and cost-free.`,
+        message: `${options.spec.provider} capabilities must be a single read or write effect and cost-free.`,
       });
     }
 
@@ -160,6 +169,22 @@ export async function executeReadProviderCall<TConfig, TOperation, TCredentials>
       home: options.home,
     });
     const provider = getProviderProfile(profile, options.spec.provider);
+    const effectDecision = evaluateEffects({
+      record,
+      input,
+      profilePolicy: provider.policy,
+      authorization: { allowWrite: options.command.allowWrite === true },
+      environment: getProviderEnvironment(profile, options.spec.provider),
+    });
+    if (!effectDecision.allowed) {
+      throw new GkitFailure({
+        code: "EFFECT_NOT_ALLOWED",
+        message: effectDecision.message,
+        hint: effectDecision.hint,
+        details: { reason: effectDecision.reason },
+        meta: contextMeta(context),
+      });
+    }
     const config = options.spec.readConfig(provider);
     const operation = options.spec.createOperation(
       record.adapterKey,
@@ -208,6 +233,7 @@ export async function executeReadProviderCall<TConfig, TOperation, TCredentials>
     );
     const prepared = await options.spec.prepareCredentials({
       profile,
+      effects: record.effects,
       resolvedSecrets,
       readFile: dependencies.readFile,
       secrets,
@@ -264,7 +290,10 @@ export async function executeReadProviderCall<TConfig, TOperation, TCredentials>
         ok: true,
         data: {
           ...providerResult.data,
-          artifactFormat: options.spec.artifactFormat,
+          artifactFormat:
+            typeof options.spec.artifactFormat === "function"
+              ? options.spec.artifactFormat(operation)
+              : options.spec.artifactFormat,
           artifact: context.artifact,
         },
         meta: contextMeta(context),

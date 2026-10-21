@@ -197,6 +197,57 @@ describe("gkit process contract", () => {
     expect(await pathExists(fixture.ledgerPath)).toBe(false);
   });
 
+  it("routes --allow-write from argv to the GSC effect gate for sitemap submission", async () => {
+    const fixture = await createCliFixture();
+    const submitArgs = [
+      "--profile",
+      "app-a",
+      "gsc",
+      "api",
+      "call",
+      "--operation-id",
+      "gsc.sitemaps.submit",
+      "--input",
+      JSON.stringify({ feedpath: "https://example.com/sitemap.xml" }),
+      "--out",
+      fixture.outPath,
+    ];
+
+    const denied = await runMainHarness(
+      submitArgs,
+      fixture.env,
+      "async () => { throw new Error('network must not be used'); }",
+    ).result;
+    expect(denied.exitCode).toBe(1);
+    expect(JSON.parse(denied.stdout)).toMatchObject({
+      ok: false,
+      error: {
+        code: "EFFECT_NOT_ALLOWED",
+        outcome: "not_dispatched",
+        details: { reason: "missing_allow_write" },
+      },
+      meta: { capability: "gsc.sitemaps.submit", effects: ["write"] },
+    });
+    expect(await pathExists(fixture.outPath)).toBe(false);
+
+    const planned = await runCli([...submitArgs, "--allow-write", "--dry-run"], fixture.env);
+    expect(planned.exitCode).toBe(0);
+    expect(JSON.parse(planned.stdout)).toMatchObject({
+      ok: true,
+      data: {
+        dryRun: true,
+        requestPlan: {
+          provider: "gsc",
+          capability: "gsc.sitemaps.submit",
+          method: "PUT",
+          endpoint:
+            "https://www.googleapis.com/webmasters/v3/sites/sc-domain%3Aexample.com/sitemaps/https%3A%2F%2Fexample.com%2Fsitemap.xml",
+        },
+      },
+    });
+    expect(await pathExists(fixture.outPath)).toBe(false);
+  });
+
   it("dry-runs and executes PostHog without touching the spend ledger", async () => {
     const fixture = await createCliFixture();
     const args = [

@@ -15,16 +15,26 @@ const webmastersOrigin = "https://www.googleapis.com/webmasters/v3";
 const inspectionEndpoint = "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect";
 
 type GscRequest = {
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "PUT";
   url: string;
   body?: Record<string, unknown>;
   rowsKey?: string;
+  // Present only for sitemaps.submit: Google acknowledges it with an empty body.
+  submission?: { siteUrl: string; feedpath: string };
 };
+
+const submitReceiptFormat = "gkit-gsc-sitemap-submit-receipt";
+
+export function gscArtifactFormat(operation: GscOperation): string {
+  return operation.adapterKey === "sitemaps.submit"
+    ? submitReceiptFormat
+    : "exact-gsc-json-response";
+}
 
 export function planGscRequest(
   operation: GscOperation,
   config: GscConfig,
-): { method: "GET" | "POST"; endpoint: string } {
+): { method: GscRequest["method"]; endpoint: string } {
   const request = buildRequest(operation, config);
   return { method: request.method, endpoint: request.url };
 }
@@ -76,6 +86,9 @@ export async function dispatchGsc(options: {
   }
 
   const providerRequestId = safeRequestId(response);
+  if (request.submission && response.ok) {
+    return submissionReceipt(request.submission, response.status, providerRequestId);
+  }
   let payload: unknown;
   try {
     payload = JSON.parse(Buffer.from(rawBytes).toString("utf8")) as unknown;
@@ -98,18 +111,28 @@ export async function dispatchGsc(options: {
           : response.status === 408 || response.status >= 500
             ? "UNKNOWN_OUTCOME"
             : "PROVIDER_ERROR";
+    // A Restricted user can read a property but gets 403 on writes; say so
+    // instead of the generic credentials message.
+    const writeDenied = Boolean(request.submission) && response.status === 403;
     return failure({
       code,
-      message:
-        code === "AUTH_FAILED"
+      message: writeDenied
+        ? "GSC denied the sitemap submission: the service account lacks write permission on this property. A Restricted user can read but cannot submit sitemaps; grant it Full or Owner permission in Search Console."
+        : code === "AUTH_FAILED"
           ? "GSC rejected the configured credentials or property access."
           : code === "RATE_LIMITED"
             ? "GSC rejected the request because its rate limit was reached."
-            : "GSC rejected the read request.",
+            : request.submission
+              ? "GSC rejected the sitemap submission."
+              : "GSC rejected the read request.",
       outcome: code === "UNKNOWN_OUTCOME" ? "unknown" : "confirmed",
       rawBytes,
       providerRequestId,
-      details: { httpStatus: response.status, ...safeGoogleError(payload) },
+      details: {
+        httpStatus: response.status,
+        ...safeGoogleError(payload),
+        ...(writeDenied ? { requiredPermissionLevel: "siteFullUser" } : {}),
+      },
     });
   }
   if (!isRecord(payload)) {
@@ -179,15 +202,43 @@ function buildRequest(operation: GscOperation, config: GscConfig): GscRequest {
     if (sitemapIndex) url.searchParams.set("sitemapIndex", sitemapIndex);
     return { method: "GET", url: url.toString(), rowsKey: "sitemap" };
   }
-  if (operation.adapterKey === "sitemaps.get") {
+  if (operation.adapterKey === "sitemaps.get" || operation.adapterKey === "sitemaps.submit") {
     const feedpath = requiredString(operation.input, "feedpath");
     assertAbsoluteHttpUrl(feedpath, "feedpath");
-    return {
-      method: "GET",
-      url: `${webmastersOrigin}/sites/${sitePath}/sitemaps/${encodeURIComponent(feedpath)}`,
-    };
+    const url = `${webmastersOrigin}/sites/${sitePath}/sitemaps/${encodeURIComponent(feedpath)}`;
+    return operation.adapterKey === "sitemaps.get"
+      ? { method: "GET", url }
+      : { method: "PUT", url, submission: { siteUrl, feedpath } };
   }
   throw new TypeError("GSC adapter key is not reviewed.");
+}
+
+// sitemaps.submit succeeds with an empty body, so the artifact is a
+// deterministic gkit receipt rather than provider bytes.
+function submissionReceipt(
+  submission: NonNullable<GscRequest["submission"]>,
+  httpStatus: number,
+  providerRequestId: string | null,
+): RawJsonDispatchResult {
+  const receipt = {
+    feedpath: submission.feedpath,
+    httpStatus,
+    operation: "sitemaps.submit",
+    provider: "gsc",
+    siteUrl: submission.siteUrl,
+    submitted: true,
+  };
+  return {
+    ok: true,
+    rawBytes: new Uint8Array(Buffer.from(`${JSON.stringify(receipt, null, 2)}\n`, "utf8")),
+    providerRequestId,
+    data: {
+      submitted: true,
+      siteUrl: submission.siteUrl,
+      feedpath: submission.feedpath,
+      httpStatus,
+    },
+  };
 }
 
 function stringInput(input: Readonly<Record<string, unknown>>, key: string): string | undefined {

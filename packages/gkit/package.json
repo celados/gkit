@@ -1,6 +1,6 @@
 {
   "name": "gkit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Profile-bound, agent-first growth provider CLI.",
   "bin": {

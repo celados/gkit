@@ -1,8 +1,8 @@
 {
   "version": 1,
   "provider": "gsc",
-  "manifestRevision": "2026-07-14.slice4.gsc.2",
-  "reviewedAt": "2026-07-14T06:10:00.000Z",
+  "manifestRevision": "2026-10-21.gsc.3",
+  "reviewedAt": "2026-10-21T00:00:00.000Z",
   "entries": [
     {
       "path": "/webmasters/v3/sites",
@@ -173,8 +173,38 @@
       "path": "/webmasters/v3/sites/{siteUrl}/sitemaps/{feedpath}",
       "method": "put",
       "operationId": "sitemaps.submit",
-      "exposure": "inventory",
-      "reason": "Write operation is outside Slice 4."
+      "exposure": "executable",
+      "capability": {
+        "id": "gsc.sitemaps.submit",
+        "provider": "gsc",
+        "revision": "1",
+        "adapterKey": "sitemaps.submit",
+        "title": "Submit one sitemap to Search Console",
+        "description": "Submit or resubmit one exact sitemap URL for one Search Console property. Changes provider state, so it requires --allow-write, and the service account needs Full or Owner permission on the property; a Restricted user is rejected with AUTH_FAILED. Google returns an empty body, so the artifact is a gkit submission receipt with siteUrl, feedpath, and httpStatus.",
+        "effects": ["write"],
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["feedpath"],
+          "properties": {
+            "siteUrl": { "type": "string", "minLength": 1, "maxLength": 2048 },
+            "feedpath": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048,
+              "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://[^\\s/?#]+"
+            }
+          }
+        },
+        "examples": [
+          {
+            "title": "Submit the openclaw-web sitemap index",
+            "input": { "feedpath": "https://openclawai.io/sitemap-index.xml" },
+            "command": "gkit --profile openclaw-web gsc api call --operation-id gsc.sitemaps.submit --input @request.json --allow-write --out gsc-sitemap-submit.json --dry-run"
+          }
+        ]
+      }
     },
     {
       "path": "/webmasters/v3/sites/{siteUrl}/sitemaps/{feedpath}",

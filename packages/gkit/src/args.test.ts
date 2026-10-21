@@ -158,10 +158,42 @@ describe("gkit argv parser", () => {
         profileFlag: "app-a",
         operationId,
         input: "{}",
+        ...(provider === "gsc" ? { allowWrite: false } : {}),
         out: "result.json",
         force: false,
         dryRun: true,
       });
+    },
+  );
+
+  it("parses --allow-write for GSC calls so the effect gate receives it", () => {
+    expect(
+      parseArgs([
+        "--profile",
+        "app-a",
+        "gsc",
+        "api",
+        "call",
+        "--operation-id",
+        "gsc.sitemaps.submit",
+        "--input",
+        "{}",
+        "--allow-write",
+        "--out",
+        "receipt.json",
+      ]),
+    ).toMatchObject({ kind: "gsc-call", operationId: "gsc.sitemaps.submit", allowWrite: true });
+    expect(() =>
+      parseArgs(["gsc", "api", "call", "--operation-id", "x", "--input", "{}", "--allow-write=yes"]),
+    ).toThrow("does not accept a value");
+  });
+
+  it.each(["bing", "hubspot", "dataforseo"] as const)(
+    "rejects --allow-write for %s, which has no write capabilities",
+    (provider) => {
+      expect(() =>
+        parseArgs([provider, "api", "call", "--operation-id", "x", "--input", "{}", "--allow-write"]),
+      ).toThrow("Unknown flag: --allow-write");
     },
   );
 

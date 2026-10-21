@@ -57,6 +57,7 @@ export type ParsedCommand =
       profileFlag: string | null;
       operationId: string;
       input: string;
+      allowWrite: boolean;
       out: string | null;
       force: boolean;
       dryRun: boolean;
@@ -264,8 +265,28 @@ export function parseArgs(argv: string[]): ParsedCommand {
     invalid(`Expected ${provider} doctor or ${provider} api call.`);
   }
 
-  const booleanNames = new Set(["--allow-spend", "--force", "--dry-run"]);
+  const booleanNames = new Set(["--allow-spend", "--allow-write", "--force", "--dry-run"]);
   const flags = parseFlags(rest.slice(3), booleanNames);
+  if (provider === "gsc") {
+    requireOnly(flags, [
+      "--operation-id",
+      "--input",
+      "--allow-write",
+      "--out",
+      "--force",
+      "--dry-run",
+    ]);
+    return {
+      kind: "gsc-call",
+      profileFlag,
+      operationId: requiredString(flags, "--operation-id"),
+      input: requiredString(flags, "--input"),
+      allowWrite: flags.get("--allow-write") === true,
+      out: optionalString(flags, "--out"),
+      force: flags.get("--force") === true,
+      dryRun: flags.get("--dry-run") === true,
+    };
+  }
   if (provider !== "dataforseo") {
     requireOnly(flags, ["--operation-id", "--input", "--out", "--force", "--dry-run"]);
     return {
@@ -276,9 +297,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
             ? "hubspot-call"
           : provider === "google-ads"
             ? "google-ads-call"
-            : provider === "gsc"
-              ? "gsc-call"
-              : "bing-call",
+            : "bing-call",
       profileFlag,
       operationId: requiredString(flags, "--operation-id"),
       input: requiredString(flags, "--input"),
@@ -344,6 +363,7 @@ export function renderHelp(): string {
     "  gkit --profile <app> gsc doctor",
     "  gkit --profile <app> gsc api call --operation-id <id> --input @request.json --out <path> --dry-run",
     "  gkit --profile <app> gsc api call --operation-id <id> --input @request.json --out <path>",
+    "  Write capabilities (gsc.sitemaps.submit) also require --allow-write, including --dry-run.",
     "",
     "HubSpot:",
     "  gkit --profile <app> hubspot doctor",
