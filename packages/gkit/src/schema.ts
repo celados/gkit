@@ -176,7 +176,7 @@ export function buildGkitSchema(
       },
     ),
     gsc: group(
-      { description: `${gscCapabilityCount} reviewed reads.` },
+      { description: `${gscCapabilityCount} reviewed capabilities; writes need --allow-write.` },
       {
         doctor: c
           .meta({
@@ -189,7 +189,7 @@ export function buildGkitSchema(
           {
             call: c
               .meta({
-                description: `Call ${gscCapabilityCount} reads: gkit --profile <app> gsc api call --operation-id <id> --input @request.json --out <path> --dry-run.`,
+                description: `Call ${gscCapabilityCount}: gkit --profile <app> gsc api call --operation-id <id> --input @request.json --out <path> --dry-run.`,
                 examples: [
                   "gkit --profile <app> gsc api call --operation-id <id> --input @request.json --out <path> --dry-run",
                 ],
@@ -298,7 +298,7 @@ function compactRootSchema(generated: string): string {
         },
       )
       .replace(
-        /^\s*\/\*\* (?:\d+ reviewed reads?\.|Profile check\.|Native API\.) \*\/\n/gm,
+        /^\s*\/\*\* (?:\d+ reviewed (?:reads?\.|capabilities; [^*\n]*)|Profile check\.|Native API\.) \*\/\n/gm,
         "",
       )
       .replace(/\n{2,}/g, "\n")

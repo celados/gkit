@@ -175,7 +175,22 @@ gkit --profile my-app gsc api call \
 Artifacts use no-replace behavior by default. Choose a new output path for a
 later run, or add `--force` only after reviewing the existing destination.
 DataForSEO operations that can spend money additionally require both
-`--allow-spend` and an explicit `--max-spend-usd` limit.
+`--allow-spend` and an explicit `--max-spend-usd` limit. Operations that change
+provider state, such as `gsc.sitemaps.submit`, require `--allow-write`; without
+it gkit fails with `EFFECT_NOT_ALLOWED` before any request:
+
+```bash
+gkit --profile my-app gsc api call \
+  --operation-id gsc.sitemaps.submit \
+  --input '{"feedpath":"https://example.com/sitemap.xml"}' \
+  --allow-write \
+  --out ./gsc-sitemap-submit.json
+```
+
+Sitemap submission needs Full or Owner permission for the service account in
+Search Console; a Restricted user receives `AUTH_FAILED`. Google returns an
+empty body, so the artifact is a gkit receipt with `siteUrl`, `feedpath`, and
+`httpStatus`.
 
 ### HubSpot read-only example
 

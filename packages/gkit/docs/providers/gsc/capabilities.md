@@ -5,7 +5,7 @@ description: >
   Generated, searchable documentation for the reviewed gsc operations
   that gkit is allowed to route and execute.
 provider: gsc
-manifestRevision: 2026-07-14.slice4.gsc.2
+manifestRevision: 2026-10-21.gsc.3
 ---
 
 # gsc reviewed executable capabilities
@@ -218,6 +218,49 @@ List sitemaps for one Search Console property.
 
 ```bash
 gkit --profile openclaw-web gsc api call --operation-id gsc.sitemaps.list --input '{}' --out gsc-sitemaps.json --dry-run
+```
+
+## gsc.sitemaps.submit
+
+Submit or resubmit one exact sitemap URL for one Search Console property. Changes provider state, so it requires --allow-write, and the service account needs Full or Owner permission on the property; a Restricted user is rejected with AUTH_FAILED. Google returns an empty body, so the artifact is a gkit submission receipt with siteUrl, feedpath, and httpStatus.
+
+- Provider: `gsc`
+- Adapter key: `sitemaps.submit`
+- Capability revision: `1`
+- Effects: `write`
+
+### Input schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "feedpath"
+  ],
+  "properties": {
+    "siteUrl": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "feedpath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://[^\\s/?#]+"
+    }
+  }
+}
+```
+
+### Invocation
+
+#### Submit the openclaw-web sitemap index
+
+```bash
+gkit --profile openclaw-web gsc api call --operation-id gsc.sitemaps.submit --input @request.json --allow-write --out gsc-sitemap-submit.json --dry-run
 ```
 
 ## gsc.url-inspection.inspect

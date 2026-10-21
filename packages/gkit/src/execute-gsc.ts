@@ -7,9 +7,11 @@ import type { ProviderProfile } from "./profile";
 import { deriveGscAccessToken } from "./providers/gsc-auth";
 import {
   dispatchGsc,
+  gscArtifactFormat,
   planGscRequest,
   type GscConfig,
   type GscCredentials,
+  type GscFetch,
   type GscOperation,
 } from "./providers/gsc";
 
@@ -20,6 +22,7 @@ export const gscAdapterKeys = new Set([
   "search-analytics.query",
   "sitemaps.list",
   "sitemaps.get",
+  "sitemaps.submit",
   "url-inspection.inspect",
 ]);
 
@@ -30,7 +33,10 @@ export async function executeGscCall(options: {
   env?: Readonly<Record<string, string | undefined>>;
   xdgConfigHome?: string;
   home?: string;
+  fetch?: GscFetch;
+  deriveAccessToken?: typeof deriveGscAccessToken;
 }) {
+  const deriveAccessToken = options.deriveAccessToken ?? deriveGscAccessToken;
   return await executeReadProviderCall<GscConfig, GscOperation, GscCredentials>({
     ...options,
     spec: {
@@ -39,7 +45,7 @@ export async function executeGscCall(options: {
       readConfig,
       createOperation: (adapterKey, input) => Object.freeze({ adapterKey, input }),
       plan: planGscRequest,
-      prepareCredentials: async ({ profile, resolvedSecrets, readFile, secrets }) => {
+      prepareCredentials: async ({ profile, effects, resolvedSecrets, readFile, secrets }) => {
         const serviceAccountFile = resolvedSecrets.serviceAccountFile;
         if (!serviceAccountFile)
           throw new TypeError("GSC requires a serviceAccountFile env reference.");
@@ -48,7 +54,10 @@ export async function executeGscCall(options: {
         secrets.register(serviceAccount.privateKey);
         let accessToken: string;
         try {
-          accessToken = await deriveGscAccessToken(serviceAccount.credentials);
+          accessToken = await deriveAccessToken(
+            serviceAccount.credentials,
+            effects.includes("write") ? "write" : "read",
+          );
         } catch {
           throw new GkitFailure({
             code: "AUTH_FAILED",
@@ -61,8 +70,9 @@ export async function executeGscCall(options: {
           secretValues: [serviceAccount.privateKey, accessToken],
         };
       },
-      dispatch: dispatchGsc,
-      artifactFormat: "exact-gsc-json-response",
+      dispatch: async (dispatchOptions) =>
+        await dispatchGsc({ ...dispatchOptions, fetch: options.fetch }),
+      artifactFormat: gscArtifactFormat,
     },
   });
 }
