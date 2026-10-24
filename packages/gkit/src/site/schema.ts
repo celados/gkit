@@ -1,4 +1,4 @@
-import { c, group } from "argc";
+import { c, group } from "@celados/argc";
 import { toStandardJsonSchema as s } from "@valibot/to-json-schema";
 import * as v from "valibot";
 const command = (description: string, input: v.GenericSchema) =>

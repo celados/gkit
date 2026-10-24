@@ -1,22 +1,21 @@
 {
   "name": "gkit",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Profile-bound, agent-first growth provider CLI.",
   "bin": {
-    "gkit": "bin/gkit.js"
+    "gkit": "dist/gkit.js"
   },
   "files": [
-    "bin",
+    "dist",
     "docs",
-    "generated",
-    "src",
-    "!**/*.test.ts"
+    "generated"
   ],
   "type": "module",
   "sideEffects": false,
   "scripts": {
     "cli": "bun run ./src/cli.ts",
+    "build": "bun build ./bin/gkit.js --target=bun --outfile=dist/gkit.js",
     "check-types": "tsc --noEmit",
     "generate:dataforseo": "bun run ./scripts/generate-dataforseo.ts",
     "generate:dataforseo:check": "bun run ./scripts/generate-dataforseo.ts --check",
@@ -35,24 +34,22 @@
     "test:once": "vitest run && bun run test:site",
     "test:site": "bun run ./scripts/test-site-snapshot.ts"
   },
-  "dependencies": {
+  "devDependencies": {
+    "@celados/argc": "^7.11.3",
     "@standard-schema/spec": "^1.0.0",
+    "@types/bun": "^1.3.10",
+    "@types/node": "^25.6.0",
     "@valibot/to-json-schema": "^1.6.0",
     "ajv": "^8.20.0",
-    "argc": "github:ethan-huo/argc#v7.11.1",
+    "bun-types": "^1.3.13",
     "cheerio": "^1.2.0",
     "dotenv": "^17.2.2",
     "google-auth-library": "^10.9.0",
     "robots-parser": "3.0.1",
     "saxes": "6.0.0",
-    "valibot": "^1.2.0",
-    "yaml": "^2.9.0"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.3.10",
-    "@types/node": "^25.6.0",
-    "bun-types": "^1.3.13",
     "typescript": "^5",
-    "vitest": "^4.0.18"
+    "valibot": "^1.2.0",
+    "vitest": "^4.0.18",
+    "yaml": "^2.9.0"
   }
 }

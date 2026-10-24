@@ -15,7 +15,7 @@ type PackageJson = Readonly<{
   private?: unknown;
 }>;
 
-const allowedTopLevelEntries = new Set(["bin", "docs", "generated", "package.json", "src"]);
+const allowedTopLevelEntries = new Set(["dist", "docs", "generated", "package.json"]);
 const forbiddenPathPattern =
   /(^|\/)(?:\.env(?:\..*)?|\.npmrc|bunfig\.toml|[^/]*\.test\.[^/]+|__tests__|evals?|scripts?|sources?|policy)(?:\/|$)/i;
 const secretMaterialPatterns = [
@@ -45,6 +45,9 @@ try {
     throw new Error("The gkit package must remain private to prevent registry publication.");
   }
 
+  // The artifact ships a Bun bundle: runtime deps (incl. the private @celados/argc)
+  // are inlined, so public consumers install with no registry auth.
+  await runCommand(["bun", "run", "build"], packageRoot);
   const packed = await runCommand(
     ["npm", "pack", "--json", "--pack-destination", packDirectory, packageRoot],
     temporaryRoot,
@@ -154,7 +157,7 @@ function parseOutputDirectory(arguments_: readonly string[]): string | undefined
 }
 
 async function verifyPackageContents(paths: readonly string[]): Promise<void> {
-  if (!paths.includes("bin/gkit.js") || !paths.includes("package.json")) {
+  if (!paths.includes("dist/gkit.js") || !paths.includes("package.json")) {
     throw new Error("The package is missing its binary or package manifest.");
   }
   if (!paths.some((path) => path.startsWith("generated/"))) {
