@@ -1,6 +1,6 @@
-// Runtime read, not a Bun macro: gkit ships as a source tarball installed
-// into node_modules, and Bun refuses to run macros from there.
+// Text import: inlined into the bundled release artifact, read from disk in dev.
+import skill from "./index.md" with { type: "text" };
+
 export async function embedSkill(): Promise<Record<string, string>> {
-  const text = await Bun.file(new URL("./index.md", import.meta.url)).text();
-  return { "SKILL.md": text };
+  return { "SKILL.md": skill };
 }

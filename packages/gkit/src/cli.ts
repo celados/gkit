@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 
-import { ensureTrailingNewline, formatBareSkill } from "argc/skill";
+import { ensureTrailingNewline, formatBareSkill } from "@celados/argc/skill";
 
 import { parseArgs, renderHelp } from "./args";
 import { embedSkill } from "./skill.embed";

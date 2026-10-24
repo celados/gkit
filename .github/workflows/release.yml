@@ -58,6 +58,14 @@ jobs:
           fi
           bun run ./packages/gkit/scripts/release-preflight.ts "${args[@]}"
 
+      - name: Configure Celados npm registry
+        if: steps.preflight.outputs.release == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          printf '%s\n' '@celados:registry=https://npm.celados.com' > .npmrc
+          printf '%s\n' "//npm.celados.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
+
       - name: Install frozen dependencies
         if: steps.preflight.outputs.release == 'true'
         run: bun install --frozen-lockfile

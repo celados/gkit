@@ -248,6 +248,8 @@ aliases or deprecated binaries. Historical behavior evidence remains under
 
 ## Verification
 
+Development dependencies include `@celados/argc` from the private team registry `npm.celados.com`. Before `bun install`, write a gitignored `.npmrc` that maps `@celados` to that registry with the team token (template: `.npmrc.tpl` in `celados/argc`, rendered with `latch render`). CI does the same from the `NPM_TOKEN` secret. The release artifact is a bundle and needs no registry access.
+
 ```bash
 bun run eval
 bun run check-types
