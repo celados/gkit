@@ -29,13 +29,25 @@ references only. Inject the real values at runtime. Then:
 
 ```bash
 gkit --profile my-app gsc doctor
-gkit --profile my-app gsc api call --operation-id gsc.properties.list --input @request.json --out result.json --dry-run
+gkit --profile my-app gsc api call --capability-id gsc.properties.list --input @request.json --out result.json --dry-run
 ```
 
 `--profile` wins over `GKIT_PROFILE`. DataForSEO spend calls also need
 `--allow-spend` and `--max-spend-usd`. Write capabilities such as
 `gsc.sitemaps.submit` need `--allow-write`, including on `--dry-run`. Default artifact behavior is
 no-replace; add `--force` only after reviewing the destination.
+
+## Operation Journal
+
+Every live call (not dry-runs or calls rejected before dispatch) is recorded in
+`$XDG_STATE_HOME/gkit/operations.jsonl` (or `~/.local/state/gkit/operations.jsonl`)
+and identified by `meta.operationId`. `gkit operations` lists recent operations
+with a closed `state`: `succeeded` (provider success plus a recorded artifact),
+`failed`, `not_dispatched`, or `unknown` (the attempt crossed the provider seam
+without a confirmed result). Inspect one with `gkit operations show --id <id>`.
+An `unknown` result, or an unknown spend amount, changes only through
+`gkit operations reconcile --id <id> ... --evidence-ref <ref>` backed by provider
+evidence; a successful retry is a new operation, not evidence.
 
 ## Anti-Patterns
 
@@ -47,3 +59,4 @@ no-replace; add `--force` only after reviewing the destination.
 | Pipe a provider payload into context | Persist with `--out` and re-read | stdout is an envelope; the bulk is a file |
 | Merge two App profiles in one process | One profile per invocation | Binding is exclusive |
 | Add `--allow-write` to reads or by habit | Only for a reviewed write after its dry-run | Writes change provider state |
+| Rerun after an `unknown` outcome | Reconcile it with provider evidence first | The first attempt may have taken effect |

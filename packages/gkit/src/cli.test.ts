@@ -4,7 +4,7 @@ import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:f
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { appendSettled, authorizeIfUnblocked } from "./ledger";
+import { settleAttempt, startAttempt } from "./journal";
 
 const temporaryDirectories: string[] = [];
 const cliPath = new URL("./cli.ts", import.meta.url).pathname;
@@ -32,6 +32,7 @@ describe("gkit process contract", () => {
     expect(result.stdout).toContain("gkit --profile <app> bing api call");
     expect(result.stdout).toContain("gkit --profile <app> gsc api call");
     expect(result.stdout).toContain("gkit --profile <app> hubspot api call");
+    expect(result.stdout).toContain("pagespeed: {");
     expect(result.stdout).toContain("gkit describe --id <capability-id>");
     expect(result.stdout).toContain("argc dotted commands and @run are intentionally not exposed");
     expect(result.stdout).not.toContain("gkit dataforseo.api.call");
@@ -66,7 +67,7 @@ describe("gkit process contract", () => {
         "hubspot",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "hubspot.crm.objects.list",
         "--input",
         JSON.stringify({ objectType: "contacts", properties: ["email"], limit: 1 }),
@@ -147,7 +148,7 @@ describe("gkit process contract", () => {
         "bing",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "bing.traffic.rank",
         "--input",
         "{}",
@@ -167,7 +168,7 @@ describe("gkit process contract", () => {
           diagnosticUrl: expect.not.stringContaining("apikey"),
         },
       },
-      meta: { provider: "bing", cost: null, attemptId: null },
+      meta: { provider: "bing", operationId: null, spend: null },
     });
 
     const gsc = await runCli(
@@ -177,7 +178,7 @@ describe("gkit process contract", () => {
         "gsc",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "gsc.properties.list",
         "--input",
         "{}",
@@ -191,10 +192,10 @@ describe("gkit process contract", () => {
     expect(JSON.parse(gsc.stdout)).toMatchObject({
       ok: true,
       data: { dryRun: true, requestPlan: { provider: "gsc", method: "GET" } },
-      meta: { provider: "gsc", cost: null, attemptId: null },
+      meta: { provider: "gsc", operationId: null, spend: null },
     });
     expect(await pathExists(fixture.outPath)).toBe(false);
-    expect(await pathExists(fixture.ledgerPath)).toBe(false);
+    expect(await pathExists(fixture.journalPath)).toBe(false);
   });
 
   it("routes --allow-write from argv to the GSC effect gate for sitemap submission", async () => {
@@ -205,7 +206,7 @@ describe("gkit process contract", () => {
       "gsc",
       "api",
       "call",
-      "--operation-id",
+      "--capability-id",
       "gsc.sitemaps.submit",
       "--input",
       JSON.stringify({ feedpath: "https://example.com/sitemap.xml" }),
@@ -248,7 +249,7 @@ describe("gkit process contract", () => {
     expect(await pathExists(fixture.outPath)).toBe(false);
   });
 
-  it("dry-runs and executes PostHog without touching the spend ledger", async () => {
+  it("dry-runs PostHog without journaling and journals the live query", async () => {
     const fixture = await createCliFixture();
     const args = [
       "--profile",
@@ -256,7 +257,7 @@ describe("gkit process contract", () => {
       "posthog",
       "api",
       "call",
-      "--operation-id",
+      "--capability-id",
       "posthog.query.run",
       "--input",
       `@${fixture.posthogRequestPath}`,
@@ -268,10 +269,10 @@ describe("gkit process contract", () => {
     expect(JSON.parse(dryRun.stdout)).toMatchObject({
       ok: true,
       data: { dryRun: true, requestPlan: { rowLimit: 10 } },
-      meta: { provider: "posthog", cost: null, attemptId: null },
+      meta: { provider: "posthog", operationId: null, spend: null },
     });
     expect(await pathExists(fixture.outPath)).toBe(false);
-    expect(await pathExists(fixture.ledgerPath)).toBe(false);
+    expect(await pathExists(fixture.journalPath)).toBe(false);
 
     const raw = JSON.stringify({ columns: ["event", "total"], results: [["$pageview", 4]] });
     const live = await runMainHarness(
@@ -284,10 +285,58 @@ describe("gkit process contract", () => {
     expect(JSON.parse(live.stdout)).toMatchObject({
       ok: true,
       data: { rowCount: 1, columnCount: 2 },
-      meta: { provider: "posthog", cost: null, attemptId: null, providerRequestId: "req_123" },
+      meta: {
+        provider: "posthog",
+        operationId: expect.any(String),
+        spend: null,
+        providerRequestId: "req_123",
+      },
     });
     expect(await readFile(fixture.outPath, "utf8")).toBe(raw);
-    expect(await pathExists(fixture.ledgerPath)).toBe(false);
+    const events = (await readFile(fixture.journalPath, "utf8"))
+      .trimEnd()
+      .split("\n")
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+    expect(events).toMatchObject([
+      { type: "attempt_started", provider: "posthog", effects: ["read"], spend: null },
+      { type: "attempt_settled", providerResult: "succeeded", providerRequestId: "req_123" },
+      { type: "artifact_recorded" },
+    ]);
+  });
+
+  it("checks PageSpeed readiness without an API key and dry-runs without journaling", async () => {
+    const fixture = await createCliFixture();
+    const doctor = await runCli(["--profile", "app-a", "pagespeed", "doctor"], fixture.env);
+    expect(doctor.exitCode).toBe(0);
+    expect(JSON.parse(doctor.stdout)).toMatchObject({
+      ok: true,
+      data: { provider: "pagespeed", apiKeyConfigured: false, networkProbe: "unknown" },
+    });
+
+    const dryRun = await runCli(
+      [
+        "--profile",
+        "app-a",
+        "pagespeed",
+        "api",
+        "call",
+        "--capability-id",
+        "pagespeed.run",
+        "--input",
+        JSON.stringify({ url: "https://example.com/" }),
+        "--out",
+        fixture.outPath,
+        "--dry-run",
+      ],
+      fixture.env,
+    );
+    expect(dryRun.exitCode).toBe(0);
+    expect(JSON.parse(dryRun.stdout)).toMatchObject({
+      ok: true,
+      data: { dryRun: true, requestPlan: { provider: "pagespeed", method: "GET" } },
+      meta: { provider: "pagespeed", operationId: null, spend: null },
+    });
+    expect(await pathExists(fixture.journalPath)).toBe(false);
   });
 
   it("emits exactly one JSON envelope and exits 1 for argv errors", async () => {
@@ -311,7 +360,7 @@ describe("gkit process contract", () => {
         "dataforseo",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "dataforseo.backlinks.bulk_ranks.live",
         "--input",
         `@${fixture.requestPath}`,
@@ -331,11 +380,11 @@ describe("gkit process contract", () => {
     });
   });
 
-  it("maps a corrupt ledger to LOCAL_IO_ERROR rather than INTERNAL_ERROR", async () => {
+  it("maps a corrupt journal to LOCAL_IO_ERROR rather than INTERNAL_ERROR", async () => {
     const fixture = await createCliFixture();
     await mkdir(join(fixture.root, "state", "gkit"), { recursive: true });
-    await writeFile(fixture.ledgerPath, "not-json\n");
-    const result = await runCli(["ledger"], fixture.env);
+    await writeFile(fixture.journalPath, "not-json\n");
+    const result = await runCli(["operations"], fixture.env);
 
     expect(result.exitCode).toBe(1);
     expect(JSON.parse(result.stdout)).toMatchObject({
@@ -344,38 +393,38 @@ describe("gkit process contract", () => {
     });
   });
 
-  it("keeps ledger status and manual reconciliation available without a provider manifest", async () => {
+  it("keeps operations status and manual reconciliation available without a provider manifest", async () => {
     const fixture = await createCliFixture();
-    await authorizeIfUnblocked({
-      ledgerPath: fixture.ledgerPath,
-      authorization: {
-        attemptId: "attempt-reconcile",
+    await startAttempt({
+      journalPath: fixture.journalPath,
+      attempt: {
+        operationId: "op-reconcile",
         profile: "app-a",
         provider: "dataforseo",
         capability: "dataforseo.backlinks.bulk_ranks.live",
-        manifestRevision: "manifest-v1",
-        costPolicyRevision: "dataforseo-backlinks-pricing-2026-07-14-v1",
+        capabilityRevision: "manifest-v1",
+        effects: ["read", "spend"],
         inputSha256: "f".repeat(64),
-        maxCostMicros: 50_000,
-        acknowledgement: {
-          allowSpend: true,
+        spend: {
+          costPolicyRevision: "dataforseo-backlinks-pricing-2026-07-14-v1",
+          maxCostMicros: 50_000,
           invocationMaxCostMicros: 50_000,
         },
       },
     });
-    await appendSettled({
-      ledgerPath: fixture.ledgerPath,
+    await settleAttempt({
+      journalPath: fixture.journalPath,
       settlement: {
-        attemptId: "attempt-reconcile",
-        outcome: "unknown",
-        costMicros: null,
+        operationId: "op-reconcile",
+        providerResult: "unknown",
         providerRequestId: "task-reconcile",
+        spend: { outcome: "unknown", costMicros: null },
       },
     });
     const missingManifest = join(fixture.root, "missing-manifest.json");
 
     const status = await runMainHarness(
-      ["ledger"],
+      ["operations"],
       fixture.env,
       "async () => { throw new Error('network must not be used'); }",
       { manifestPath: missingManifest },
@@ -384,19 +433,24 @@ describe("gkit process contract", () => {
     expect(JSON.parse(status.stdout)).toMatchObject({
       ok: true,
       data: {
+        operations: 1,
+        byState: { unknown: 1 },
         unresolved: 1,
         activePolicyBreaches: null,
         manifestStatus: "unavailable",
+        recent: [{ operationId: "op-reconcile", state: "unknown", spend: { outcome: "unknown" } }],
       },
     });
 
     const reconciliation = await runMainHarness(
       [
-        "ledger",
+        "operations",
         "reconcile",
-        "--attempt",
-        "attempt-reconcile",
-        "--outcome",
+        "--id",
+        "op-reconcile",
+        "--result",
+        "succeeded",
+        "--spend-outcome",
         "confirmed_charged",
         "--cost-usd",
         "0.060000",
@@ -413,9 +467,9 @@ describe("gkit process contract", () => {
     expect(JSON.parse(reconciliation.stdout)).toMatchObject({
       ok: true,
       data: {
-        outcome: "confirmed_charged",
-        costMicros: 60_000,
-        policyBreach: true,
+        operationId: "op-reconcile",
+        providerResult: "succeeded",
+        spend: { outcome: "confirmed_charged", costMicros: 60_000, policyBreach: true },
       },
     });
 
@@ -431,7 +485,7 @@ describe("gkit process contract", () => {
     expect(await pathExists(fixture.outPath)).toBe(false);
   });
 
-  it("dry-runs after spend gating without resolving secrets, writing ledger, or creating artifacts", async () => {
+  it("dry-runs after spend gating without resolving secrets, journaling, or creating artifacts", async () => {
     const fixture = await createCliFixture();
     const result = await runCli(
       [
@@ -440,7 +494,7 @@ describe("gkit process contract", () => {
         "dataforseo",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "dataforseo.backlinks.bulk_ranks.live",
         "--input",
         `@${fixture.requestPath}`,
@@ -463,13 +517,13 @@ describe("gkit process contract", () => {
         requestPlan: { targetCount: 2 },
         costUpperBound: { amount: "0.024072" },
       },
-      meta: { profile: "app-a", attemptId: null },
+      meta: { profile: "app-a", operationId: null },
     });
     expect(await pathExists(fixture.outPath)).toBe(false);
-    expect(await pathExists(fixture.ledgerPath)).toBe(false);
+    expect(await pathExists(fixture.journalPath)).toBe(false);
   });
 
-  it("keeps credentials out of stdout, stderr, artifacts, and the ledger on provider errors", async () => {
+  it("keeps credentials out of stdout, stderr, artifacts, and the journal on provider errors", async () => {
     const fixture = await createCliFixture();
     const login = "process-secret-login";
     const password = "process-secret-password";
@@ -506,16 +560,16 @@ describe("gkit process contract", () => {
       ok: false,
       error: { code: "LOCAL_IO_ERROR", outcome: "confirmed" },
       meta: {
-        attemptId: expect.any(String),
-        spendOutcome: "confirmed_not_charged",
+        operationId: expect.any(String),
+        spend: { outcome: "confirmed_not_charged" },
         providerRequestId: providerTaskId,
         artifact: null,
       },
     });
     expect(await pathExists(fixture.outPath)).toBe(false);
-    const ledger = await readFile(fixture.ledgerPath, "utf8");
-    expect(ledger).not.toContain(login);
-    expect(ledger).not.toContain(password);
+    const journal = await readFile(fixture.journalPath, "utf8");
+    expect(journal).not.toContain(login);
+    expect(journal).not.toContain(password);
   });
 
   it("redacts resolved credentials from doctor success and failure envelopes", async () => {
@@ -621,15 +675,15 @@ describe("gkit process contract", () => {
     expect(JSON.parse(result.stdout)).toMatchObject({
       ok: false,
       error: { code: "UNKNOWN_OUTCOME", outcome: "unknown", retryable: false },
-      meta: { spendOutcome: "unknown" },
+      meta: { spend: { outcome: "unknown" } },
     });
-    const ledgerLines = (await readFile(fixture.ledgerPath, "utf8"))
+    const journalLines = (await readFile(fixture.journalPath, "utf8"))
       .trimEnd()
       .split("\n")
-      .map((line) => JSON.parse(line) as { type: string; outcome?: string });
-    expect(ledgerLines).toMatchObject([
-      { type: "authorized" },
-      { type: "settled", outcome: "unknown" },
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+    expect(journalLines).toMatchObject([
+      { type: "attempt_started" },
+      { type: "attempt_settled", providerResult: "unknown", spend: { outcome: "unknown" } },
     ]);
     expect((await readdir(fixture.root)).some((name) => name.endsWith(".lock"))).toBe(false);
   });
@@ -657,9 +711,9 @@ describe("gkit process contract", () => {
 
     expect(result.exitCode).toBe(130);
     expect(result.stdout).toBe("");
-    const ledgerLines = (await readFile(fixture.ledgerPath, "utf8")).trimEnd().split("\n");
-    expect(ledgerLines).toHaveLength(1);
-    expect(JSON.parse(ledgerLines[0]!)).toMatchObject({ type: "authorized" });
+    const journalLines = (await readFile(fixture.journalPath, "utf8")).trimEnd().split("\n");
+    expect(journalLines).toHaveLength(1);
+    expect(JSON.parse(journalLines[0]!)).toMatchObject({ type: "attempt_started" });
   });
 });
 
@@ -704,6 +758,7 @@ async function createCliFixture() {
           policy: {},
           secrets: { accessToken: "env:TEST_HUBSPOT_ACCESS_TOKEN" },
         },
+        pagespeed: {},
       },
     }),
   );
@@ -728,7 +783,7 @@ async function createCliFixture() {
     requestPath,
     posthogRequestPath,
     outPath: join(root, "result.json"),
-    ledgerPath: join(stateHome, "gkit", "ledger.jsonl"),
+    journalPath: join(stateHome, "gkit", "operations.jsonl"),
     profilePath: join(profiles, "app-a.json"),
     env: {
       PATH: process.env.PATH ?? "",
@@ -772,7 +827,7 @@ function liveArgs(fixture: Awaited<ReturnType<typeof createCliFixture>>): string
     "dataforseo",
     "api",
     "call",
-    "--operation-id",
+    "--capability-id",
     "dataforseo.backlinks.bulk_ranks.live",
     "--input",
     `@${fixture.requestPath}`,

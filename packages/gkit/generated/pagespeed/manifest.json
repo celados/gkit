@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "provider": "pagespeed",
+  "revision": "2026-10-27.pagespeed.read-v1.1",
+  "source": {
+    "url": "https://developers.google.com/speed/docs/insights/rest/v5/pagespeedapi/runpagespeed",
+    "revision": "v5-reviewed-2026-10-27",
+    "checksum": "sha256:576338647249133047e2baae312c4f83e75e2e56b5cb9b38bd60d145cb343a87"
+  },
+  "reviewedAt": "2026-10-27T05:00:00.000Z",
+  "capabilities": [
+    {
+      "id": "pagespeed.run",
+      "provider": "pagespeed",
+      "revision": "1",
+      "adapterKey": "run",
+      "title": "Run a PageSpeed Insights analysis",
+      "description": "Run Lighthouse for one URL and return category scores plus Chrome UX Report field data for the URL and its origin when available.",
+      "effects": [
+        "read"
+      ],
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "strategy": {
+            "enum": [
+              "mobile",
+              "desktop"
+            ]
+          },
+          "categories": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "performance",
+                "seo",
+                "accessibility",
+                "best-practices"
+              ]
+            }
+          },
+          "locale": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 16
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "url": "https://example.com/",
+            "strategy": "mobile",
+            "categories": [
+              "performance",
+              "seo"
+            ]
+          },
+          "command": "gkit --profile <app> pagespeed api call --capability-id pagespeed.run --input @request.json --out pagespeed.json --dry-run"
+        }
+      ]
+    }
+  ]
+}

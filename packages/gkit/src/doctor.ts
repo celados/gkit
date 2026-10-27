@@ -20,7 +20,7 @@ import {
 
 export type DoctorResult = {
   profilePath: string;
-  provider: "bing" | "dataforseo" | "google-ads" | "gsc" | "hubspot" | "posthog";
+  provider: "bing" | "dataforseo" | "google-ads" | "gsc" | "hubspot" | "pagespeed" | "posthog";
   environment: "production" | "sandbox" | null;
   host?: string;
   projectId?: string;
@@ -28,6 +28,7 @@ export type DoctorResult = {
   siteUrl?: string;
   portalId?: string;
   authMode?: "private_app_token" | "service_account";
+  apiKeyConfigured?: boolean;
   profileConfigured: true;
   secretsConfigured: true;
   spendPolicyConfigured: boolean;
@@ -41,11 +42,10 @@ function doctorMeta(profile: string, provider = "dataforseo"): EnvelopeMeta {
     provider,
     capability: null,
     effects: [],
-    cost: null,
+    operationId: null,
     artifact: null,
-    attemptId: null,
-    spendOutcome: null,
     providerRequestId: null,
+    spend: null,
   };
 }
 
@@ -161,7 +161,7 @@ async function runSimpleReadDoctor(options: {
 function doctorProfileFailure(
   error: unknown,
   selectedProfile: string | null,
-  provider: "bing" | "gsc",
+  provider: "bing" | "gsc" | "pagespeed",
   secrets: SecretRegistry,
 ): DoctorExecutionResult {
   if (!(error instanceof ProfileError)) throw error;
@@ -176,6 +176,44 @@ function doctorProfileFailure(
     ),
     secrets,
   };
+}
+
+export async function runPageSpeedDoctor(options: {
+  profileFlag: string | null;
+  env?: Readonly<Record<string, string | undefined>>;
+  xdgConfigHome?: string;
+  home?: string;
+}): Promise<DoctorExecutionResult> {
+  const env = options.env ?? process.env;
+  const secrets = new SecretRegistry();
+  let selectedProfile = options.profileFlag ?? env.GKIT_PROFILE ?? null;
+  try {
+    selectedProfile = selectProfileName(options.profileFlag ?? undefined, env);
+    const profile = await loadProfile(selectedProfile, {
+      xdgConfigHome: options.xdgConfigHome,
+      home: options.home,
+    });
+    getProviderProfile(profile, "pagespeed");
+    const profileEnvironment = await loadProfileEnvironment(profile, env);
+    const resolved = resolveProviderSecrets(profile, "pagespeed", profileEnvironment);
+    if (resolved.apiKey) secrets.register(resolved.apiKey);
+    const result: DoctorResult = {
+      profilePath: profile.path,
+      provider: "pagespeed",
+      environment: null,
+      apiKeyConfigured: Boolean(resolved.apiKey),
+      profileConfigured: true,
+      secretsConfigured: true,
+      spendPolicyConfigured: false,
+      networkProbe: "unknown",
+      note: resolved.apiKey
+        ? "PageSpeed readiness validates local configuration only; no provider network request was sent."
+        : "PageSpeed readiness validates local configuration only; without an apiKey requests share Google's low anonymous quota.",
+    };
+    return { envelope: { ok: true, data: result, meta: doctorMeta(profile.name, "pagespeed") }, secrets };
+  } catch (error) {
+    return doctorProfileFailure(error, selectedProfile, "pagespeed", secrets);
+  }
 }
 
 export async function runPostHogDoctor(options: {

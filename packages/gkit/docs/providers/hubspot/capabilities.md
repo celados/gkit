@@ -79,7 +79,7 @@ List bounded associations from one reviewed CRM record to one reviewed object ty
 ### Invocation
 
 ```bash
-gkit --profile app-a hubspot api call --operation-id hubspot.crm.associations.list --input @request.json --out hubspot-associations.json --dry-run
+gkit --profile app-a hubspot api call --capability-id hubspot.crm.associations.list --input @request.json --out hubspot-associations.json --dry-run
 ```
 
 ## hubspot.crm.objects.list
@@ -178,7 +178,7 @@ List bounded records for one reviewed CRM object type and reviewed properties.
 ### Invocation
 
 ```bash
-gkit --profile app-a hubspot api call --operation-id hubspot.crm.objects.list --input @request.json --out hubspot-contacts.json --dry-run
+gkit --profile app-a hubspot api call --capability-id hubspot.crm.objects.list --input @request.json --out hubspot-contacts.json --dry-run
 ```
 
 ## hubspot.crm.objects.search
@@ -258,7 +258,7 @@ Run one bounded HubSpot CRM Search POST over reviewed objects, properties, filte
 ### Invocation
 
 ```bash
-gkit --profile app-a hubspot api call --operation-id hubspot.crm.objects.search --input @request.json --out hubspot-contact-search.json --dry-run
+gkit --profile app-a hubspot api call --capability-id hubspot.crm.objects.search --input @request.json --out hubspot-contact-search.json --dry-run
 ```
 
 ## hubspot.crm.owners.list
@@ -301,7 +301,7 @@ List bounded active or archived HubSpot owners for attribution joins.
 ### Invocation
 
 ```bash
-gkit --profile app-a hubspot api call --operation-id hubspot.crm.owners.list --input '{"limit":100}' --out hubspot-owners.json --dry-run
+gkit --profile app-a hubspot api call --capability-id hubspot.crm.owners.list --input '{"limit":100}' --out hubspot-owners.json --dry-run
 ```
 
 ## hubspot.crm.pipelines.list
@@ -337,7 +337,7 @@ List pipelines and stages for deals or tickets.
 ### Invocation
 
 ```bash
-gkit --profile app-a hubspot api call --operation-id hubspot.crm.pipelines.list --input '{"objectType":"deals"}' --out hubspot-deal-pipelines.json --dry-run
+gkit --profile app-a hubspot api call --capability-id hubspot.crm.pipelines.list --input '{"objectType":"deals"}' --out hubspot-deal-pipelines.json --dry-run
 ```
 
 ## hubspot.crm.properties.list
@@ -375,7 +375,7 @@ List non-sensitive property definitions for one reviewed CRM object type.
 ### Invocation
 
 ```bash
-gkit --profile app-a hubspot api call --operation-id hubspot.crm.properties.list --input '{"objectType":"contacts"}' --out hubspot-contact-properties.json --dry-run
+gkit --profile app-a hubspot api call --capability-id hubspot.crm.properties.list --input '{"objectType":"contacts"}' --out hubspot-contact-properties.json --dry-run
 ```
 
 ## hubspot.events.occurrences.list
@@ -468,5 +468,5 @@ List bounded HubSpot event occurrences within an explicit time window.
 ### Invocation
 
 ```bash
-gkit --profile app-a hubspot api call --operation-id hubspot.events.occurrences.list --input @request.json --out hubspot-events.json --dry-run
+gkit --profile app-a hubspot api call --capability-id hubspot.events.occurrences.list --input @request.json --out hubspot-events.json --dry-run
 ```

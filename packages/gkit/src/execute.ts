@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { Buffer } from "node:buffer";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -10,6 +10,7 @@ import {
   type ArtifactReservation,
 } from "./artifact";
 import type { ParsedCommand } from "./args";
+import { sha256CanonicalJson } from "./canonical";
 import { evaluateEffects, type AllowedEffectDecision } from "./effects";
 import {
   type Envelope,
@@ -20,14 +21,16 @@ import {
   toFailureEnvelope,
 } from "./envelope";
 import {
-  appendSettled,
-  authorizeIfUnblocked,
-  defaultLedgerPath,
+  defaultJournalPath,
   getSpendBlockers,
-  LedgerError,
+  JournalError,
+  recordArtifact,
+  settleAttempt,
   SpendBlockedError,
-  type SettledSpendEvent,
-} from "./ledger";
+  startAttempt,
+  type AttemptSettledEvent,
+} from "./journal";
+import { providerResultOf } from "./operation-recorder";
 import {
   getManifestRecord,
   ManifestError,
@@ -62,8 +65,9 @@ export type ExecuteDependencies = {
   loadProfile: typeof loadProfile;
   resolveProviderSecrets: typeof resolveProviderSecrets;
   getSpendBlockers: typeof getSpendBlockers;
-  authorizeIfUnblocked: typeof authorizeIfUnblocked;
-  appendSettled: typeof appendSettled;
+  startAttempt: typeof startAttempt;
+  settleAttempt: typeof settleAttempt;
+  recordArtifact: typeof recordArtifact;
   reserveArtifactDestination: typeof reserveArtifactDestination;
   loadDataForSeoAdapter: () => Promise<{
     dispatchDataForSeo: (options: {
@@ -76,7 +80,7 @@ export type ExecuteDependencies = {
       timeoutMs?: number;
     }) => Promise<DataForSeoDispatchResult>;
   }>;
-  randomAttemptId: () => string;
+  randomOperationId: () => string;
 };
 
 const defaultDependencies: ExecuteDependencies = {
@@ -84,11 +88,12 @@ const defaultDependencies: ExecuteDependencies = {
   loadProfile,
   resolveProviderSecrets,
   getSpendBlockers,
-  authorizeIfUnblocked,
-  appendSettled,
+  startAttempt,
+  settleAttempt,
+  recordArtifact,
   reserveArtifactDestination,
   loadDataForSeoAdapter: async () => await import("./providers/dataforseo"),
-  randomAttemptId: randomUUID,
+  randomOperationId: randomUUID,
 };
 
 const dataForSeoAdapterKeys = new Set<DataForSeoAdapterKey>([
@@ -103,7 +108,7 @@ type ExecutionContext = {
   profile: string | null;
   capability: string | null;
   effects: string[];
-  attemptId: string | null;
+  operationId: string | null;
   spendOutcome: "confirmed_charged" | "confirmed_not_charged" | "unknown" | null;
   providerRequestId: string | null;
   actualCostMicros: number | null;
@@ -115,7 +120,7 @@ function baseContext(): ExecutionContext {
     profile: null,
     capability: null,
     effects: [],
-    attemptId: null,
+    operationId: null,
     spendOutcome: null,
     providerRequestId: null,
     actualCostMicros: null,
@@ -129,14 +134,19 @@ function contextMeta(context: ExecutionContext): EnvelopeMeta {
     provider: "dataforseo",
     capability: context.capability,
     effects: context.effects,
-    cost:
-      context.actualCostMicros === null
-        ? null
-        : { amount: formatUsdMicros(context.actualCostMicros), currency: "USD" },
+    operationId: context.operationId,
     artifact: context.artifact,
-    attemptId: context.attemptId,
-    spendOutcome: context.spendOutcome,
     providerRequestId: context.providerRequestId,
+    spend:
+      context.spendOutcome === null
+        ? null
+        : {
+            outcome: context.spendOutcome,
+            cost:
+              context.actualCostMicros === null
+                ? null
+                : { amount: formatUsdMicros(context.actualCostMicros), currency: "USD" },
+          },
   };
 }
 
@@ -147,7 +157,7 @@ export async function executeDataForSeoCall(options: {
   env?: Readonly<Record<string, string | undefined>>;
   xdgConfigHome?: string;
   home?: string;
-  ledgerPath?: string;
+  journalPath?: string;
   dependencies?: Partial<ExecuteDependencies>;
 }): Promise<ExecuteResult> {
   const dependencies = { ...defaultDependencies, ...options.dependencies };
@@ -161,7 +171,7 @@ export async function executeDataForSeoCall(options: {
 
   try {
     throwIfCancelledBeforeAuthorization(options.signal);
-    const record = getManifestRecord(options.manifest, options.command.operationId);
+    const record = getManifestRecord(options.manifest, options.command.capabilityId);
     context.capability = record.id;
     context.effects = [...record.effects];
 
@@ -240,9 +250,9 @@ export async function executeDataForSeoCall(options: {
       force: options.command.force,
     });
 
-    const ledgerPath = options.ledgerPath ?? defaultLedgerPath(env);
+    const journalPath = options.journalPath ?? defaultJournalPath(env);
     const blockers = await dependencies.getSpendBlockers({
-      ledgerPath,
+      journalPath,
       profile: profile.name,
       provider: "dataforseo",
       capability: record.id,
@@ -251,7 +261,7 @@ export async function executeDataForSeoCall(options: {
     });
     throwIfCancelledBeforeAuthorization(options.signal);
     if (blockers.length > 0) {
-      throw new SpendBlockedError(ledgerPath, blockers);
+      throw new SpendBlockedError(journalPath, blockers);
     }
 
     const profileEnvironment = await loadProfileEnvironment(profile, env);
@@ -271,34 +281,35 @@ export async function executeDataForSeoCall(options: {
     secrets.registerBasicAuth(login, password);
 
     throwIfCancelledBeforeAuthorization(options.signal);
-    const attemptId = dependencies.randomAttemptId();
-    context.attemptId = attemptId;
-    await dependencies.authorizeIfUnblocked({
-      ledgerPath,
-      authorization: {
-        attemptId,
+    const operationId = dependencies.randomOperationId();
+    await dependencies.startAttempt({
+      journalPath,
+      attempt: {
+        operationId,
         profile: profile.name,
         provider: "dataforseo",
         capability: record.id,
-        manifestRevision: options.manifest.document.revision,
-        costPolicyRevision: requiredPolicyRevision(effectDecision),
+        capabilityRevision: record.revision,
+        effects: record.effects,
         inputSha256,
-        maxCostMicros: requiredMaxCost(effectDecision),
-        acknowledgement: {
-          allowSpend: true,
+        spend: {
+          costPolicyRevision: requiredPolicyRevision(effectDecision),
+          maxCostMicros: requiredMaxCost(effectDecision),
           invocationMaxCostMicros: requiredInvocationCap(effectDecision),
         },
       },
     });
+    context.operationId = operationId;
     authorized = true;
 
     if (options.signal.aborted) {
-      const settled = await dependencies.appendSettled({
-        ledgerPath,
+      const settled = await dependencies.settleAttempt({
+        journalPath,
         settlement: {
-          attemptId,
-          outcome: "confirmed_not_charged",
-          costMicros: 0,
+          operationId,
+          providerResult: "not_dispatched",
+          errorCode: "CANCELLED",
+          spend: { outcome: "confirmed_not_charged", costMicros: 0 },
         },
       });
       applySettlement(context, settled);
@@ -315,12 +326,13 @@ export async function executeDataForSeoCall(options: {
     try {
       const adapter = await dependencies.loadDataForSeoAdapter();
       if (options.signal.aborted) {
-        const settled = await dependencies.appendSettled({
-          ledgerPath,
+        const settled = await dependencies.settleAttempt({
+          journalPath,
           settlement: {
-            attemptId,
-            outcome: "confirmed_not_charged",
-            costMicros: 0,
+            operationId,
+            providerResult: "not_dispatched",
+            errorCode: "CANCELLED",
+            spend: { outcome: "confirmed_not_charged", costMicros: 0 },
           },
         });
         applySettlement(context, settled);
@@ -343,12 +355,13 @@ export async function executeDataForSeoCall(options: {
     } catch (error) {
       if (error instanceof GkitFailure) throw error;
       if (!dispatched) {
-        const settled = await dependencies.appendSettled({
-          ledgerPath,
+        const settled = await dependencies.settleAttempt({
+          journalPath,
           settlement: {
-            attemptId,
-            outcome: "confirmed_not_charged",
-            costMicros: 0,
+            operationId,
+            providerResult: "not_dispatched",
+            errorCode: "INTERNAL_ERROR",
+            spend: { outcome: "confirmed_not_charged", costMicros: 0 },
           },
         });
         applySettlement(context, settled);
@@ -384,15 +397,16 @@ export async function executeDataForSeoCall(options: {
       environment === "sandbox",
     );
 
-    let settlement: SettledSpendEvent;
+    let settlement: AttemptSettledEvent;
     try {
-      settlement = await dependencies.appendSettled({
-        ledgerPath,
+      settlement = await dependencies.settleAttempt({
+        journalPath,
         settlement: {
-          attemptId,
-          outcome: context.spendOutcome ?? "unknown",
-          costMicros: reportedCostMicros,
+          operationId,
+          providerResult: providerResultOf(providerResult),
+          errorCode: providerResult.ok ? null : providerResult.code,
           providerRequestId,
+          spend: { outcome: context.spendOutcome ?? "unknown", costMicros: reportedCostMicros },
         },
       });
     } catch {
@@ -415,8 +429,8 @@ export async function executeDataForSeoCall(options: {
       reservation = null;
       throw new GkitFailure({
         code: "LOCAL_IO_ERROR",
-        message: "The provider response facts could not be appended to the durable spend ledger.",
-        hint: "Do not rerun the provider request; inspect and reconcile the spend ledger.",
+        message: "The provider response facts could not be appended to the durable operation journal.",
+        hint: "Do not rerun the provider request; inspect and reconcile it with gkit operations.",
         retryable: false,
         outcome: providerResult.ok ? "confirmed" : providerResult.outcome,
         meta: contextMeta(context),
@@ -445,6 +459,24 @@ export async function executeDataForSeoCall(options: {
       artifactFailure ??= normalizeArtifactError(error);
       reservation = null;
     }
+    if (context.artifact && !artifactFailure) {
+      try {
+        await dependencies.recordArtifact({
+          journalPath,
+          operationId,
+          artifact: context.artifact,
+        });
+      } catch {
+        throw new GkitFailure({
+          code: "LOCAL_IO_ERROR",
+          message: "The provider artifact was published, but the operation journal could not link it.",
+          hint: "Do not rerun the provider request; inspect it with gkit operations.",
+          retryable: false,
+          outcome: providerResult.ok ? "confirmed" : providerResult.outcome,
+          meta: contextMeta(context),
+        });
+      }
+    }
 
     if (!providerResult.ok && providerResult.outcome === "unknown") {
       throw new GkitFailure({
@@ -455,13 +487,13 @@ export async function executeDataForSeoCall(options: {
         outcome: "unknown",
         details: appendExecutionDetails(providerResult.details, {
           artifactFailure,
-          policyBreach: settlement.policyBreach,
+          policyBreach: settlement.spend?.policyBreach === true,
         }),
         meta: contextMeta(context),
       });
     }
 
-    if (settlement.policyBreach) {
+    if (settlement.spend?.policyBreach) {
       throw new GkitFailure({
         code: "SPEND_POLICY_BREACH",
         message: "DataForSEO reported a cost above the reviewed authorized bound.",
@@ -481,7 +513,7 @@ export async function executeDataForSeoCall(options: {
         code: "LOCAL_IO_ERROR",
         message:
           "The provider request completed, but its raw artifact could not be published safely.",
-        hint: "Do not rerun a charged or unknown spend attempt; inspect the ledger and artifact path.",
+        hint: "Do not rerun a charged or unknown spend attempt; inspect gkit operations and the artifact path.",
         retryable: false,
         outcome: providerResult.ok ? "confirmed" : providerResult.outcome,
         meta: contextMeta(context),
@@ -536,7 +568,7 @@ export async function executeDataForSeoCall(options: {
         error = new GkitFailure({
           code: "LOCAL_IO_ERROR",
           message: "The artifact reservation could not be released safely.",
-          hint: "Inspect the artifact lock and spend ledger before retrying.",
+          hint: "Inspect the artifact lock and gkit operations before retrying.",
           meta: contextMeta(context),
         });
       }
@@ -545,7 +577,7 @@ export async function executeDataForSeoCall(options: {
     if (options.signal.aborted && !dispatched) {
       const localStateIsUncertain =
         cleanupFailed ||
-        error instanceof LedgerError ||
+        error instanceof JournalError ||
         error instanceof ArtifactError ||
         (error instanceof GkitFailure && error.code === "LOCAL_IO_ERROR") ||
         (authorized && !authorizationSettled);
@@ -554,7 +586,7 @@ export async function executeDataForSeoCall(options: {
             code: "LOCAL_IO_ERROR",
             message:
               "The invocation was not dispatched, but its local authorization or cleanup state is unresolved.",
-            hint: "Inspect gkit ledger and local locks before considering another call.",
+            hint: "Inspect gkit operations and local locks before considering another call.",
             outcome: "not_dispatched",
             meta: contextMeta(context),
           })
@@ -739,9 +771,9 @@ function throwIfCancelledBeforeAuthorization(signal: AbortSignal): void {
   });
 }
 
-function applySettlement(context: ExecutionContext, settlement: SettledSpendEvent): void {
-  context.spendOutcome = settlement.outcome;
-  context.actualCostMicros = settlement.costMicros;
+function applySettlement(context: ExecutionContext, settlement: AttemptSettledEvent): void {
+  context.spendOutcome = settlement.spend?.outcome ?? "unknown";
+  context.actualCostMicros = settlement.spend?.costMicros ?? null;
   context.providerRequestId = settlement.providerRequestId;
 }
 
@@ -785,21 +817,21 @@ function normalizeExecutionError(error: unknown, context: ExecutionContext): Gki
   if (error instanceof SpendBlockedError) {
     return new GkitFailure({
       code: "EFFECT_NOT_ALLOWED",
-      message: "A prior spend attempt blocks this request.",
-      hint: "Inspect gkit ledger and reconcile unknown attempts with provider evidence.",
+      message: "A prior spend operation blocks this request.",
+      hint: "Inspect gkit operations and reconcile unknown operations with provider evidence.",
       details: {
         blockers: error.blockers.map((blocker) => ({
           reason: blocker.reason,
-          attemptId: blocker.attemptId,
+          operationId: blocker.operationId,
         })),
       },
       meta: contextMeta(context),
     });
   }
-  if (error instanceof ArtifactError || error instanceof LedgerError) {
+  if (error instanceof ArtifactError || error instanceof JournalError) {
     return new GkitFailure({
       code: "LOCAL_IO_ERROR",
-      message: "A required local artifact or ledger operation failed safely.",
+      message: "A required local artifact or journal operation failed safely.",
       hint: "Inspect the local path and lock state before retrying.",
       meta: contextMeta(context),
     });
@@ -807,27 +839,7 @@ function normalizeExecutionError(error: unknown, context: ExecutionContext): Gki
   return new GkitFailure({
     code: "INTERNAL_ERROR",
     message: "gkit encountered an internal error.",
-    hint: "Inspect local diagnostics without exposing credentials, then retry only if no spend attempt was authorized.",
+    hint: "Inspect local diagnostics without exposing credentials, then retry only if no spend operation was journaled.",
     meta: contextMeta(context),
   });
-}
-
-function sha256CanonicalJson(value: unknown): string {
-  return createHash("sha256").update(canonicalJson(value)).digest("hex");
-}
-
-function canonicalJson(value: unknown): string {
-  return JSON.stringify(canonicalValue(value));
-}
-
-function canonicalValue(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonicalValue);
-  if (value === null || typeof value !== "object") return value;
-
-  const result: Record<string, unknown> = {};
-  for (const key of Object.keys(value).sort()) {
-    const child = (value as Record<string, unknown>)[key];
-    if (child !== undefined) result[key] = canonicalValue(child);
-  }
-  return result;
 }

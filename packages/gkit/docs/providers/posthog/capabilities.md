@@ -76,11 +76,11 @@ Run one read-only HogQL SELECT or WITH query with an explicit result-row limit.
 #### Safe preflight
 
 ```bash
-gkit --profile clonesite.ai posthog api call --operation-id posthog.query.run --input @req.json --out posthog-query.json --dry-run
+gkit --profile clonesite.ai posthog api call --capability-id posthog.query.run --input @req.json --out posthog-query.json --dry-run
 ```
 
 #### Live call after reviewing the dry-run
 
 ```bash
-gkit --profile clonesite.ai posthog api call --operation-id posthog.query.run --input @req.json --out posthog-query.json
+gkit --profile clonesite.ai posthog api call --capability-id posthog.query.run --input @req.json --out posthog-query.json
 ```

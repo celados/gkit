@@ -30,16 +30,22 @@ export type ArtifactReceipt = {
   sha256: string;
 };
 
+export type SpendMeta = {
+  outcome: SpendOutcome;
+  cost: { amount: string; currency: "USD" } | null;
+};
+
 export type EnvelopeMeta = {
   profile: string | null;
   provider: string | null;
   capability: string | null;
   effects: string[];
-  cost: { amount: string; currency: "USD" } | null;
+  /** Runtime-generated Growth Operation identity; present once the attempt is journaled. */
+  operationId: string | null;
   artifact: ArtifactReceipt | null;
-  attemptId: string | null;
-  spendOutcome: SpendOutcome | null;
   providerRequestId: string | null;
+  /** Settled spend facts; null for cost-free capabilities and before settlement. */
+  spend: SpendMeta | null;
 };
 
 export type SuccessEnvelope<T = unknown> = {

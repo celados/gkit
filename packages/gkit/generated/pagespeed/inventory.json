@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "provider": "pagespeed",
+  "revision": "2026-10-27.pagespeed.read-v1.1",
+  "source": {
+    "url": "https://developers.google.com/speed/docs/insights/rest/v5/pagespeedapi/runpagespeed",
+    "revision": "v5-reviewed-2026-10-27",
+    "checksum": "sha256:576338647249133047e2baae312c4f83e75e2e56b5cb9b38bd60d145cb343a87"
+  },
+  "operations": [
+    {
+      "path": "/pagespeedonline/v5/runPagespeed",
+      "method": "get",
+      "operationId": "pagespeedapi.runpagespeed",
+      "exposure": "executable",
+      "capabilityId": "pagespeed.run",
+      "reason": "Reviewed adapter, input, effect, and response contracts are committed."
+    }
+  ]
+}

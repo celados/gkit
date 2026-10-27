@@ -103,6 +103,12 @@ const hubSpotSecretsSchema = strictObject({
   accessToken: pipe(string(), regex(ENV_REFERENCE_PATTERN)),
 });
 
+const pageSpeedConfigSchema = strictObject({});
+
+const pageSpeedSecretsSchema = strictObject({
+  apiKey: optional(pipe(string(), regex(ENV_REFERENCE_PATTERN))),
+});
+
 export type ProviderEnvironment = "production" | "sandbox";
 
 export type ProviderPolicy = {
@@ -228,6 +234,8 @@ export async function loadProfile(
               ? parsePostHogConfig(provider.config)
               : providerId === "hubspot"
                 ? parseHubSpotConfig(provider.config)
+              : providerId === "pagespeed"
+                ? parsePageSpeedConfig(provider.config)
               : providerId === "google-ads"
                 ? parseGoogleAdsConfig(provider.config)
                 : freezeRecord(provider.config);
@@ -242,6 +250,8 @@ export async function loadProfile(
               ? parsePostHogSecrets(provider.secrets)
               : providerId === "hubspot"
                 ? parseHubSpotSecrets(provider.secrets)
+              : providerId === "pagespeed"
+                ? parsePageSpeedSecrets(provider.secrets)
               : providerId === "google-ads"
                 ? parseGoogleAdsSecrets(provider.secrets)
                 : Object.freeze(provider.secrets as Record<string, `env:${string}`>);
@@ -491,6 +501,27 @@ function parseHubSpotSecrets(
     throw new ProfileError(
       "invalid_profile",
       "HubSpot secrets must contain only an accessToken env: reference.",
+    );
+  }
+  return Object.freeze(parsed.output as Record<string, `env:${string}`>);
+}
+
+function parsePageSpeedConfig(config: Record<string, unknown>): Readonly<Record<string, unknown>> {
+  const parsed = safeParse(pageSpeedConfigSchema, config);
+  if (!parsed.success) {
+    throw new ProfileError("invalid_profile", "PageSpeed config must be empty.");
+  }
+  return Object.freeze(parsed.output);
+}
+
+function parsePageSpeedSecrets(
+  secrets: Record<string, string>,
+): Readonly<Record<string, `env:${string}`>> {
+  const parsed = safeParse(pageSpeedSecretsSchema, secrets);
+  if (!parsed.success) {
+    throw new ProfileError(
+      "invalid_profile",
+      "PageSpeed secrets may contain only an optional apiKey env: reference.",
     );
   }
   return Object.freeze(parsed.output as Record<string, `env:${string}`>);

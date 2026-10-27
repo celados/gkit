@@ -30,6 +30,10 @@ export const bingAdapterKeys = new Set([
   "sitemaps.get",
   "urls.info",
   "urls.traffic",
+  "crawl.blocked-urls",
+  "urls.submission-quota",
+  "urls.submit",
+  "sitemaps.submit",
 ]);
 
 export async function executeBingCall(options: {
@@ -39,6 +43,7 @@ export async function executeBingCall(options: {
   env?: Readonly<Record<string, string | undefined>>;
   xdgConfigHome?: string;
   home?: string;
+  journalPath?: string;
 }) {
   return await executeReadProviderCall<BingConfig, BingOperation, BingCredentials>({
     ...options,

@@ -38,13 +38,13 @@ List customer resource names directly accessible to the authenticated service ac
 #### Safe preflight
 
 ```bash
-gkit --profile openclaw-web google-ads api call --operation-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json --dry-run
+gkit --profile openclaw-web google-ads api call --capability-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json --dry-run
 ```
 
 #### Live read
 
 ```bash
-gkit --profile openclaw-web google-ads api call --operation-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json
+gkit --profile openclaw-web google-ads api call --capability-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json
 ```
 
 ## google-ads.fields.describe
@@ -82,7 +82,7 @@ Read metadata for one exact Google Ads field name through the pinned field servi
 #### Describe campaign.id
 
 ```bash
-gkit --profile openclaw-web google-ads api call --operation-id google-ads.fields.describe --input '{"name":"campaign.id"}' --out campaign-id-field.json --dry-run
+gkit --profile openclaw-web google-ads api call --capability-id google-ads.fields.describe --input '{"name":"campaign.id"}' --out campaign-id-field.json --dry-run
 ```
 
 ## google-ads.fields.search
@@ -124,7 +124,7 @@ Run one provider-native GoogleAdsField query and explicitly paginate all result 
 #### Search campaign fields
 
 ```bash
-gkit --profile openclaw-web google-ads api call --operation-id google-ads.fields.search --input @fields.json --out fields-pages.json --dry-run
+gkit --profile openclaw-web google-ads api call --capability-id google-ads.fields.search --input @fields.json --out fields-pages.json --dry-run
 ```
 
 ## google-ads.keyword-plan.generate-historical-metrics
@@ -193,7 +193,7 @@ Read provider-native Keyword Planner historical metrics for an explicit bounded 
 #### Read US English metrics
 
 ```bash
-gkit --profile openclaw-web google-ads api call --operation-id google-ads.keyword-plan.generate-historical-metrics --input @historical.json --out keyword-history-pages.json --dry-run
+gkit --profile openclaw-web google-ads api call --capability-id google-ads.keyword-plan.generate-historical-metrics --input @historical.json --out keyword-history-pages.json --dry-run
 ```
 
 ## google-ads.keyword-plan.generate-ideas
@@ -332,7 +332,7 @@ Generate and explicitly paginate provider-native Keyword Planner ideas for the p
 #### Generate US English ideas
 
 ```bash
-gkit --profile openclaw-web google-ads api call --operation-id google-ads.keyword-plan.generate-ideas --input @ideas.json --out keyword-ideas-pages.json --dry-run
+gkit --profile openclaw-web google-ads api call --capability-id google-ads.keyword-plan.generate-ideas --input @ideas.json --out keyword-ideas-pages.json --dry-run
 ```
 
 ## google-ads.query.gaql
@@ -370,5 +370,5 @@ Run one provider-native GAQL query against the profile-bound customer and stream
 #### Read campaigns
 
 ```bash
-gkit --profile openclaw-web google-ads api call --operation-id google-ads.query.gaql --input @gaql.json --out gaql-pages.json --dry-run
+gkit --profile openclaw-web google-ads api call --capability-id google-ads.query.gaql --input @gaql.json --out gaql-pages.json --dry-run
 ```

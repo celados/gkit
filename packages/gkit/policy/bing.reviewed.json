@@ -1,8 +1,8 @@
 {
   "version": 1,
   "provider": "bing",
-  "manifestRevision": "2026-07-14.slice4.bing.1",
-  "reviewedAt": "2026-07-14T06:00:00.000Z",
+  "manifestRevision": "2026-10-27.bing.search-health.1",
+  "reviewedAt": "2026-10-27T04:00:00.000Z",
   "entries": [
     {
       "path": "/GetUserSites",
@@ -26,7 +26,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.sites.list --input '{}' --out bing-sites.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.sites.list --input '{}' --out bing-sites.json --dry-run"
           }
         ]
       }
@@ -53,7 +53,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.rank --input '{}' --out bing-rank.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.rank --input '{}' --out bing-rank.json --dry-run"
           }
         ]
       }
@@ -80,7 +80,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.queries --input '{}' --out bing-queries.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.queries --input '{}' --out bing-queries.json --dry-run"
           }
         ]
       }
@@ -107,7 +107,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.pages --input '{}' --out bing-pages.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.pages --input '{}' --out bing-pages.json --dry-run"
           }
         ]
       }
@@ -138,7 +138,7 @@
         "examples": [
           {
             "input": { "query": "website cloner" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.query --input @request.json --out bing-query.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.query --input @request.json --out bing-query.json --dry-run"
           }
         ]
       }
@@ -169,7 +169,7 @@
         "examples": [
           {
             "input": { "pageUrl": "https://example.com/docs" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.page-queries --input @request.json --out bing-page-queries.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.page-queries --input @request.json --out bing-page-queries.json --dry-run"
           }
         ]
       }
@@ -200,7 +200,7 @@
         "examples": [
           {
             "input": { "query": "website cloner" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.query-pages --input @request.json --out bing-query-pages.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.query-pages --input @request.json --out bing-query-pages.json --dry-run"
           }
         ]
       }
@@ -232,7 +232,7 @@
         "examples": [
           {
             "input": { "query": "website cloner", "pageUrl": "https://example.com/docs" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.query-page --input @request.json --out bing-query-page.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.query-page --input @request.json --out bing-query-page.json --dry-run"
           }
         ]
       }
@@ -259,7 +259,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.crawl.stats --input '{}' --out bing-crawl-stats.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.crawl.stats --input '{}' --out bing-crawl-stats.json --dry-run"
           }
         ]
       }
@@ -286,7 +286,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.crawl.issues --input '{}' --out bing-crawl-issues.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.crawl.issues --input '{}' --out bing-crawl-issues.json --dry-run"
           }
         ]
       }
@@ -313,7 +313,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.crawl.settings --input '{}' --out bing-crawl-settings.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.crawl.settings --input '{}' --out bing-crawl-settings.json --dry-run"
           }
         ]
       }
@@ -343,7 +343,7 @@
         "examples": [
           {
             "input": { "page": 0 },
-            "command": "gkit --profile <app> bing api call --operation-id bing.links.pages --input '{\"page\":0}' --out bing-links.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.links.pages --input '{\"page\":0}' --out bing-links.json --dry-run"
           }
         ]
       }
@@ -375,7 +375,7 @@
         "examples": [
           {
             "input": { "link": "https://example.com/docs", "page": 0 },
-            "command": "gkit --profile <app> bing api call --operation-id bing.links.url --input @request.json --out bing-url-links.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.links.url --input @request.json --out bing-url-links.json --dry-run"
           }
         ]
       }
@@ -402,7 +402,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.sitemaps.list --input '{}' --out bing-sitemaps.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.sitemaps.list --input '{}' --out bing-sitemaps.json --dry-run"
           }
         ]
       }
@@ -433,7 +433,7 @@
         "examples": [
           {
             "input": { "feedUrl": "https://example.com/sitemap.xml" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.sitemaps.get --input @request.json --out bing-sitemap.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.sitemaps.get --input @request.json --out bing-sitemap.json --dry-run"
           }
         ]
       }
@@ -464,7 +464,7 @@
         "examples": [
           {
             "input": { "url": "https://example.com/docs" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.urls.info --input @request.json --out bing-url-info.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.urls.info --input @request.json --out bing-url-info.json --dry-run"
           }
         ]
       }
@@ -495,7 +495,161 @@
         "examples": [
           {
             "input": { "url": "https://example.com/docs" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.urls.traffic --input @request.json --out bing-url-traffic.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.urls.traffic --input @request.json --out bing-url-traffic.json --dry-run"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/GetBlockedUrls",
+      "method": "get",
+      "operationId": "GetBlockedUrls",
+      "exposure": "executable",
+      "capability": {
+        "id": "bing.crawl.blocked-urls",
+        "provider": "bing",
+        "revision": "1",
+        "adapterKey": "crawl.blocked-urls",
+        "title": "Read Bing blocked URLs",
+        "description": "Read URLs and directories blocked from Bing results for one site.",
+        "effects": ["read"],
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "siteUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          }
+        },
+        "examples": [
+          {
+            "input": {},
+            "command": "gkit --profile <app> bing api call --capability-id bing.crawl.blocked-urls --input '{}' --out bing-blocked-urls.json --dry-run"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/GetUrlSubmissionQuota",
+      "method": "get",
+      "operationId": "GetUrlSubmissionQuota",
+      "exposure": "executable",
+      "capability": {
+        "id": "bing.urls.submission-quota",
+        "provider": "bing",
+        "revision": "1",
+        "adapterKey": "urls.submission-quota",
+        "title": "Read Bing URL submission quota",
+        "description": "Read the remaining daily and monthly URL submission quota for one site.",
+        "effects": ["read"],
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "siteUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          }
+        },
+        "examples": [
+          {
+            "input": {},
+            "command": "gkit --profile <app> bing api call --capability-id bing.urls.submission-quota --input '{}' --out bing-url-quota.json --dry-run"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/SubmitUrlbatch",
+      "method": "post",
+      "operationId": "SubmitUrlbatch",
+      "exposure": "executable",
+      "capability": {
+        "id": "bing.urls.submit",
+        "provider": "bing",
+        "revision": "1",
+        "adapterKey": "urls.submit",
+        "title": "Submit URLs to Bing",
+        "description": "Submit up to 500 URLs of one site for Bing crawling; consumes the daily URL submission quota.",
+        "effects": ["write"],
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["urlList"],
+          "properties": {
+            "siteUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            },
+            "urlList": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 500,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              }
+            }
+          }
+        },
+        "examples": [
+          {
+            "input": {
+              "urlList": ["https://example.com/new-page"]
+            },
+            "command": "gkit --profile <app> bing api call --capability-id bing.urls.submit --input @request.json --allow-write --out bing-url-submit.json --dry-run"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/SubmitFeed",
+      "method": "post",
+      "operationId": "SubmitFeed",
+      "exposure": "executable",
+      "capability": {
+        "id": "bing.sitemaps.submit",
+        "provider": "bing",
+        "revision": "1",
+        "adapterKey": "sitemaps.submit",
+        "title": "Submit a sitemap to Bing",
+        "description": "Submit or resubmit one sitemap or feed URL for one site.",
+        "effects": ["write"],
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["feedUrl"],
+          "properties": {
+            "siteUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            },
+            "feedUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          }
+        },
+        "examples": [
+          {
+            "input": {
+              "feedUrl": "https://example.com/sitemap.xml"
+            },
+            "command": "gkit --profile <app> bing api call --capability-id bing.sitemaps.submit --input @request.json --allow-write --out bing-sitemap-submit.json --dry-run"
           }
         ]
       }

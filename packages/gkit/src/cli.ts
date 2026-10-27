@@ -11,6 +11,7 @@ import {
   runGoogleAdsDoctor,
   runGscDoctor,
   runHubSpotDoctor,
+  runPageSpeedDoctor,
   runPostHogDoctor,
 } from "./doctor";
 import {
@@ -27,14 +28,16 @@ import { executeBingCall } from "./execute-bing";
 import { executeGoogleAdsCall } from "./execute-google-ads";
 import { executeGscCall } from "./execute-gsc";
 import { executeHubSpotCall } from "./execute-hubspot";
+import { executePageSpeedCall } from "./execute-pagespeed";
 import { executePostHogCall } from "./execute-posthog";
 import {
-  appendSettled,
-  defaultLedgerPath,
-  LedgerError,
-  readLedger,
+  defaultJournalPath,
+  JournalError,
+  readJournal,
+  settleAttempt,
   type SpendOutcome,
-} from "./ledger";
+} from "./journal";
+import { journalSummary, needsReconciliation, operationView } from "./operations-view";
 import { loadExecutableManifest } from "./manifest";
 import { renderGkitSchema } from "./schema";
 
@@ -69,6 +72,12 @@ export const hubSpotManifestPath = fileURLToPath(
 );
 export const hubSpotDocsDirectory = fileURLToPath(
   new URL("../docs/providers/hubspot", import.meta.url),
+);
+export const pageSpeedManifestPath = fileURLToPath(
+  new URL("../generated/pagespeed/manifest.json", import.meta.url),
+);
+export const pageSpeedDocsDirectory = fileURLToPath(
+  new URL("../docs/providers/pagespeed", import.meta.url),
 );
 export const providerDocsDirectory = fileURLToPath(new URL("../docs/providers", import.meta.url));
 
@@ -109,6 +118,7 @@ export async function main(
     googleAdsManifestPath?: string;
     gscManifestPath?: string;
     hubSpotManifestPath?: string;
+    pageSpeedManifestPath?: string;
     postHogManifestPath?: string;
   } = {},
 ): Promise<void> {
@@ -155,6 +165,7 @@ export async function main(
         command.provider !== "google-ads" &&
         command.provider !== "gsc" &&
         command.provider !== "hubspot" &&
+        command.provider !== "pagespeed" &&
         command.provider !== "posthog"
       ) {
         throw new GkitFailure({
@@ -173,6 +184,8 @@ export async function main(
                 ? gscDocsDirectory
                 : command.provider === "hubspot"
                   ? hubSpotDocsDirectory
+                  : command.provider === "pagespeed"
+                    ? pageSpeedDocsDirectory
                   : command.provider === "posthog"
                     ? postHogDocsDirectory
                     : providerDocsDirectory;
@@ -180,74 +193,114 @@ export async function main(
       process.exitCode = abortController.signal.aborted ? 130 : 0;
       return;
     }
-    if (command.kind === "ledger-status") {
-      const snapshot = await readLedger({ ledgerPath: defaultLedgerPath() });
+    if (command.kind === "operations-list") {
+      const snapshot = await readJournal({ journalPath: defaultJournalPath() });
       const currentCostPolicies = await loadCurrentCostPolicies(
         options.manifestPath ?? dataForSeoManifestPath,
       );
-      const unresolved = snapshot.attempts.filter(
-        (attempt) => attempt.latestSettlement?.outcome === "unknown" || !attempt.latestSettlement,
+      await emitter.writeEnvelope({
+        ok: true,
+        data: journalSummary(snapshot, { limit: command.limit, currentCostPolicies }),
+        meta: localMeta(),
+      });
+      process.exitCode = abortController.signal.aborted ? 130 : 0;
+      return;
+    }
+    if (command.kind === "operations-show") {
+      const snapshot = await readJournal({ journalPath: defaultJournalPath() });
+      const record = snapshot.operations.find(
+        (candidate) => candidate.started.operationId === command.operationId,
       );
-      const recordedBreaches = snapshot.attempts.filter((attempt) =>
-        attempt.settlements.some((settlement) => settlement.policyBreach),
-      );
-      const activeBreaches =
-        currentCostPolicies === null
-          ? null
-          : snapshot.attempts.filter(
-              (attempt) =>
-                currentCostPolicies.get(attempt.authorization.capability) ===
-                  attempt.authorization.costPolicyRevision &&
-                attempt.settlements.some((settlement) => settlement.policyBreach),
-            );
+      if (!record) {
+        throw new GkitFailure({
+          code: "INVALID_INPUT",
+          message: "The requested operation is not present in the journal.",
+        });
+      }
       await emitter.writeEnvelope({
         ok: true,
         data: {
-          path: snapshot.path,
-          attempts: snapshot.attempts.length,
-          unresolved: unresolved.length,
-          recordedPolicyBreaches: recordedBreaches.length,
-          activePolicyBreaches: activeBreaches?.length ?? null,
-          manifestStatus: currentCostPolicies === null ? "unavailable" : "available",
+          ...operationView(record),
+          events: snapshot.events.filter((event) => event.operationId === command.operationId),
         },
         meta: localMeta(),
       });
       process.exitCode = abortController.signal.aborted ? 130 : 0;
       return;
     }
-    if (command.kind === "ledger-reconcile") {
-      const ledgerPath = defaultLedgerPath();
-      const snapshot = await readLedger({ ledgerPath });
-      const attempt = snapshot.attempts.find(
-        (candidate) => candidate.authorization.attemptId === command.attemptId,
+    if (command.kind === "operations-reconcile") {
+      const journalPath = defaultJournalPath();
+      const snapshot = await readJournal({ journalPath });
+      const record = snapshot.operations.find(
+        (candidate) => candidate.started.operationId === command.operationId,
       );
-      if (!attempt) {
+      if (!record) {
         throw new GkitFailure({
           code: "INVALID_INPUT",
-          message: "The requested spend attempt is not present in the ledger.",
+          message: "The requested operation is not present in the journal.",
         });
       }
-      const costMicros = reconciliationCost(command.outcome, command.costUsd);
-      const settlement = await appendSettled({
-        ledgerPath,
+      if (!needsReconciliation(record)) {
+        throw new GkitFailure({
+          code: "INVALID_INPUT",
+          message: "The operation already has a confirmed settlement.",
+          hint: "Reconcile only operations whose provider result or spend amount is unknown.",
+        });
+      }
+      const latest = record.latestSettlement;
+      const providerResult =
+        command.providerResult ??
+        (latest !== null && latest.providerResult !== "unknown" ? latest.providerResult : null);
+      if (providerResult === null) {
+        throw new GkitFailure({
+          code: "INVALID_INPUT",
+          message: "The provider result is unknown; pass --result from provider evidence.",
+        });
+      }
+      let spend: { outcome: Exclude<SpendOutcome, "unknown">; costMicros: number } | null = null;
+      if (record.started.spend === null) {
+        if (command.spendOutcome !== null || command.costUsd !== null) {
+          throw new GkitFailure({
+            code: "INVALID_INPUT",
+            message: "The operation did not authorize spend, so it takes no spend reconciliation.",
+          });
+        }
+      } else {
+        const known = latest?.spend;
+        if (command.spendOutcome !== null) {
+          spend = {
+            outcome: command.spendOutcome,
+            costMicros: reconciliationCost(command.spendOutcome, command.costUsd),
+          };
+        } else if (known && known.outcome !== "unknown" && known.costMicros !== null) {
+          spend = { outcome: known.outcome, costMicros: known.costMicros };
+        } else {
+          throw new GkitFailure({
+            code: "INVALID_INPUT",
+            message: "The spend amount is unknown; pass --spend-outcome from provider evidence.",
+          });
+        }
+      }
+      const settlement = await settleAttempt({
+        journalPath,
         settlement: {
-          attemptId: command.attemptId,
-          outcome: command.outcome,
-          costMicros,
-          providerRequestId: command.providerRequestId,
-          settlementSource: "manual",
+          operationId: command.operationId,
+          providerResult,
+          errorCode: providerResult === "succeeded" ? null : (latest?.errorCode ?? null),
+          providerRequestId: command.providerRequestId ?? latest?.providerRequestId ?? null,
+          spend,
+          source: "manual",
           evidenceRef: command.evidenceRef,
         },
       });
       await emitter.writeEnvelope({
         ok: true,
         data: {
-          attemptId: settlement.attemptId,
-          outcome: settlement.outcome,
-          costMicros: settlement.costMicros,
-          providerRequestId: settlement.providerRequestId,
-          policyBreach: settlement.policyBreach,
+          operationId: settlement.operationId,
           eventId: settlement.eventId,
+          providerResult: settlement.providerResult,
+          providerRequestId: settlement.providerRequestId,
+          spend: settlement.spend,
         },
         meta: localMeta(),
       });
@@ -280,6 +333,12 @@ export async function main(
     }
     if (command.kind === "gsc-doctor") {
       const result = await runGscDoctor({ profileFlag: command.profileFlag });
+      await emitter.writeEnvelope(result.envelope, result.secrets);
+      process.exitCode = abortController.signal.aborted ? 130 : result.envelope.ok ? 0 : 1;
+      return;
+    }
+    if (command.kind === "pagespeed-doctor") {
+      const result = await runPageSpeedDoctor({ profileFlag: command.profileFlag });
       await emitter.writeEnvelope(result.envelope, result.secrets);
       process.exitCode = abortController.signal.aborted ? 130 : result.envelope.ok ? 0 : 1;
       return;
@@ -343,6 +402,14 @@ export async function main(
                     ),
                     signal: abortController.signal,
                   })
+              : command.kind === "pagespeed-call"
+                ? await executePageSpeedCall({
+                    command,
+                    manifest: await loadExecutableManifest(
+                      options.pageSpeedManifestPath ?? pageSpeedManifestPath,
+                    ),
+                    signal: abortController.signal,
+                  })
               : await executePostHogCall({
                   command,
                   manifest: await loadExecutableManifest(
@@ -400,6 +467,7 @@ async function loadDiscoveryManifests(options: {
   googleAdsManifestPath?: string;
   gscManifestPath?: string;
   hubSpotManifestPath?: string;
+  pageSpeedManifestPath?: string;
   postHogManifestPath?: string;
 }) {
   return await Promise.all([
@@ -408,6 +476,7 @@ async function loadDiscoveryManifests(options: {
     loadExecutableManifest(options.googleAdsManifestPath ?? googleAdsManifestPath),
     loadExecutableManifest(options.gscManifestPath ?? gscManifestPath),
     loadExecutableManifest(options.hubSpotManifestPath ?? hubSpotManifestPath),
+    loadExecutableManifest(options.pageSpeedManifestPath ?? pageSpeedManifestPath),
     loadExecutableManifest(options.postHogManifestPath ?? postHogManifestPath),
   ]);
 }
@@ -426,19 +495,19 @@ async function loadCurrentCostPolicies(manifestPath: string): Promise<Map<string
 }
 
 function normalizeTopLevelError(error: unknown): unknown {
-  if (!(error instanceof LedgerError)) return error;
-  const localIoCodes = new Set(["LEDGER_CORRUPT", "LEDGER_IO_ERROR", "LEDGER_LOCKED"]);
+  if (!(error instanceof JournalError)) return error;
+  const localIoCodes = new Set(["JOURNAL_CORRUPT", "JOURNAL_IO_ERROR", "JOURNAL_LOCKED"]);
   if (localIoCodes.has(error.code)) {
     return new GkitFailure({
       code: "LOCAL_IO_ERROR",
-      message: "The local spend ledger could not be read or updated safely.",
-      hint: "Inspect the ledger path, contents, and lock before retrying.",
+      message: "The local operation journal could not be read or updated safely.",
+      hint: "Inspect the journal path, contents, and lock before retrying.",
     });
   }
   return new GkitFailure({
     code: "INVALID_INPUT",
-    message: "The requested ledger operation is not valid for the current attempt state.",
-    hint: "Run gkit ledger and reconcile only unresolved attempts with provider evidence.",
+    message: "The requested journal change is not valid for the current operation state.",
+    hint: "Run gkit operations and reconcile only unresolved operations with provider evidence.",
   });
 }
 
@@ -448,11 +517,10 @@ function localMeta(): EnvelopeMeta {
     provider: null,
     capability: null,
     effects: [],
-    cost: null,
+    operationId: null,
     artifact: null,
-    attemptId: null,
-    spendOutcome: null,
     providerRequestId: null,
+    spend: null,
   };
 }
 

@@ -11,6 +11,7 @@ describe("provider docs", () => {
     ["google-ads", "capabilities.md"],
     ["gsc", "capabilities.md"],
     ["hubspot", "capabilities.md"],
+    ["pagespeed", "capabilities.md"],
     ["posthog", "capabilities.md"],
   ])("keeps %s docs as a byte-stable manifest projection", async (provider, file) => {
     const manifest = await loadExecutableManifest(

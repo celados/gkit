@@ -64,12 +64,12 @@ The operational decision is:
 - run the same-input dry-run with the current `$0.03` profile hard cap, then
   tighten the live invocation cap to the exact returned cost upper bound;
 - stop paid dogfood on unknown/unresolved spend, policy breach, suspected
-  credential exposure, ledger/artifact integrity failure, or duplicate
+  credential exposure, journal/artifact integrity failure, or duplicate
   dispatch.
 
 Only a pre-authorization failure with `outcome:not_dispatched`,
-`attemptId:null`, and no new durable ledger authorization may be corrected
-once. A non-null attempt ID ends retries and fallback for that task. Settled
+`operationId:null`, and no new durable journal attempt may be corrected
+once. A non-null operation ID ends retries and fallback for that task. Settled
 confirmed outcomes are recorded as-is; only unresolved/unknown outcomes require
 reconciliation.
 
@@ -92,7 +92,7 @@ Append minimal events to `$XDG_STATE_HOME/gkit/dogfood/events.jsonl`, falling
 back to `~/.local/state/gkit/dogfood/events.jsonl`, and keep sanitized
 command/envelope receipts in `receipts.jsonl` beside it. These files, request
 bodies, and raw artifacts stay local and never enter Git. Join cost and spend
-outcome from the spend ledger by `attemptId`; do not copy secrets into dogfood
+outcome from the operation journal (`gkit operations show --id <operationId>`); do not copy secrets into dogfood
 evidence. After the gate, commit only a redacted aggregate to
 `evals/baseline.md`.
 

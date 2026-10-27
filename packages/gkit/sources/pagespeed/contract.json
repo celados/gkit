@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "provider": "pagespeed",
+  "operations": [
+    { "path": "/pagespeedonline/v5/runPagespeed", "method": "get", "operationId": "pagespeedapi.runpagespeed" }
+  ]
+}

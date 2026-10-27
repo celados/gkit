@@ -34,18 +34,25 @@ const methodByAdapter = new Map<string, string>([
   ["sitemaps.get", "GetFeedDetails"],
   ["urls.info", "GetUrlInfo"],
   ["urls.traffic", "GetUrlTrafficInfo"],
+  ["crawl.blocked-urls", "GetBlockedUrls"],
+  ["urls.submission-quota", "GetUrlSubmissionQuota"],
+  ["urls.submit", "SubmitUrlbatch"],
+  ["sitemaps.submit", "SubmitFeed"],
 ]);
+
+/** Write adapters POST a JSON body; the site stays in the body, not the query. */
+const writeAdapters = new Set(["urls.submit", "sitemaps.submit"]);
 
 export function planBingRequest(
   operation: BingOperation,
   config: BingConfig,
-): { method: "GET"; endpoint: string; diagnosticUrl: string } {
+): { method: "GET" | "POST"; endpoint: string; diagnosticUrl: string } {
   const request = buildRequest(operation, config);
   const diagnosticUrl = buildBingUrls({
     method: request.method,
     params: request.params,
   }).diagnosticUrl;
-  return { method: "GET", endpoint: diagnosticUrl, diagnosticUrl };
+  return { method: request.body ? "POST" : "GET", endpoint: diagnosticUrl, diagnosticUrl };
 }
 
 export function buildBingUrls(options: {
@@ -88,10 +95,17 @@ export async function dispatchBing(options: {
   let response: Response;
   let rawBytes: Uint8Array;
   try {
-    response = await (options.fetch ?? globalThis.fetch)(urls.requestUrl, {
-      headers: { accept: "application/json" },
-      signal: dispatchSignal.signal,
-    });
+    response = await (options.fetch ?? globalThis.fetch)(
+      urls.requestUrl,
+      request.body
+        ? {
+            method: "POST",
+            headers: { accept: "application/json", "content-type": "application/json; charset=utf-8" },
+            body: JSON.stringify(request.body),
+            signal: dispatchSignal.signal,
+          }
+        : { headers: { accept: "application/json" }, signal: dispatchSignal.signal },
+    );
     rawBytes = new Uint8Array(await response.arrayBuffer());
   } catch {
     return failure({
@@ -174,13 +188,16 @@ export async function dispatchBing(options: {
 function buildRequest(
   operation: BingOperation,
   config: BingConfig,
-): { method: string; params: QueryParams } {
+): { method: string; params: QueryParams; body?: Record<string, unknown> } {
   const method = methodByAdapter.get(operation.adapterKey);
   if (!method) throw new TypeError("Bing adapter key is not reviewed.");
   if (operation.adapterKey === "sites.list") return { method, params: {} };
   const siteUrl = stringInput(operation.input, "siteUrl") ?? config.siteUrl;
   if (!siteUrl) throw new TypeError("Bing siteUrl is required in the profile or request input.");
   assertHttpUrl(siteUrl, "siteUrl");
+  if (writeAdapters.has(operation.adapterKey)) {
+    return { method, params: {}, body: buildWriteBody(operation, siteUrl) };
+  }
   const params: QueryParams = { siteUrl: { value: siteUrl } };
   switch (operation.adapterKey) {
     case "traffic.query":
@@ -210,6 +227,33 @@ function buildRequest(
       break;
   }
   return { method, params };
+}
+
+function buildWriteBody(operation: BingOperation, siteUrl: string): Record<string, unknown> {
+  if (operation.adapterKey === "sitemaps.submit") {
+    const feedUrl = stringInput(operation.input, "feedUrl");
+    if (!feedUrl) throw new TypeError("Bing feedUrl is required.");
+    assertHttpUrl(feedUrl, "feedUrl");
+    assertSameSite(feedUrl, siteUrl, "feedUrl");
+    return { siteUrl, feedUrl };
+  }
+  const urlList = operation.input.urlList;
+  if (!Array.isArray(urlList) || urlList.length === 0 || urlList.length > 500) {
+    throw new TypeError("Bing urlList must contain 1 to 500 URLs.");
+  }
+  for (const url of urlList) {
+    if (typeof url !== "string") throw new TypeError("Bing urlList entries must be URLs.");
+    assertHttpUrl(url, "urlList entry");
+    assertSameSite(url, siteUrl, "urlList entry");
+  }
+  return { siteUrl, urlList: [...urlList] };
+}
+
+/** Bing only accepts submissions for URLs under the verified site. */
+function assertSameSite(value: string, siteUrl: string, name: string): void {
+  if (new URL(value).hostname !== new URL(siteUrl).hostname) {
+    throw new TypeError(`Bing ${name} must belong to ${siteUrl}.`);
+  }
 }
 
 function stringInput(input: Readonly<Record<string, unknown>>, key: string): string | undefined {

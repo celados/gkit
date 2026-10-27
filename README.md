@@ -4,7 +4,7 @@ Profile-bound CLI for agent-first access to growth providers. This repository
 has one CLI and one workspace package: `gkit`.
 
 The reviewed provider surface includes DataForSEO, PostHog, Google Ads, Google
-Search Console, Bing Webmaster, and HubSpot.
+Search Console, Bing Webmaster, HubSpot, and PageSpeed Insights.
 
 ## Requirements
 
@@ -107,6 +107,11 @@ Provider execution must bind exactly one App profile. Create one JSON file at
       "secrets": {
         "accessToken": "env:MY_APP_HUBSPOT_ACCESS_TOKEN"
       }
+    },
+    "pagespeed": {
+      "secrets": {
+        "apiKey": "env:MY_APP_PAGESPEED_API_KEY"
+      }
     }
   }
 }
@@ -157,7 +162,7 @@ reviewing the request:
 
 ```bash
 gkit --profile my-app gsc api call \
-  --operation-id gsc.properties.list \
+  --capability-id gsc.properties.list \
   --input '{}' \
   --out ./gsc-properties-plan.json \
   --dry-run
@@ -167,7 +172,7 @@ Remove `--dry-run` only when the profile and request are correct:
 
 ```bash
 gkit --profile my-app gsc api call \
-  --operation-id gsc.properties.list \
+  --capability-id gsc.properties.list \
   --input '{}' \
   --out ./gsc-properties.json
 ```
@@ -181,7 +186,7 @@ it gkit fails with `EFFECT_NOT_ALLOWED` before any request:
 
 ```bash
 gkit --profile my-app gsc api call \
-  --operation-id gsc.sitemaps.submit \
+  --capability-id gsc.sitemaps.submit \
   --input '{"feedpath":"https://example.com/sitemap.xml"}' \
   --allow-write \
   --out ./gsc-sitemap-submit.json
@@ -191,6 +196,11 @@ Sitemap submission needs Full or Owner permission for the service account in
 Search Console; a Restricted user receives `AUTH_FAILED`. Google returns an
 empty body, so the artifact is a gkit receipt with `siteUrl`, `feedpath`, and
 `httpStatus`.
+
+Each live call is journaled under `meta.operationId`. Run `gkit operations` to
+see recent operations and anything still `unknown`; reconcile those with
+`gkit operations reconcile` and a provider evidence reference instead of
+rerunning them.
 
 ### HubSpot read-only example
 
@@ -205,7 +215,7 @@ cannot be dispatched.
 gkit --profile my-app hubspot doctor
 gkit describe --id hubspot.crm.objects.search
 gkit --profile my-app hubspot api call \
-  --operation-id hubspot.crm.objects.search \
+  --capability-id hubspot.crm.objects.search \
   --input @hubspot-search.json \
   --out ./hubspot-contact-search.json \
   --dry-run
@@ -220,6 +230,21 @@ artifacts access-controlled and request only the reviewed properties required
 for the analysis. Search pages are capped at 200 and one search query cannot
 page beyond 10,000 results; other list surfaces use lower reviewed page and
 total-result bounds documented by `describe`.
+
+### PageSpeed Insights example
+
+`pagespeed.run` runs Lighthouse for one URL and returns category scores plus
+whether Chrome UX Report field data exists for the URL and its origin; the raw
+PageSpeed response is the artifact. The `apiKey` secret is optional: without it
+requests share Google's low anonymous quota. Runs take tens of seconds.
+
+```bash
+gkit --profile my-app pagespeed doctor
+gkit --profile my-app pagespeed api call \
+  --capability-id pagespeed.run \
+  --input '{"url":"https://example.com/","strategy":"mobile","categories":["performance","seo"]}' \
+  --out ./pagespeed-home.json
+```
 
 ## Configure an Agent
 

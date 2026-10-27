@@ -28,6 +28,9 @@ export function buildGkitSchema(
   const hubSpotCapabilityCount = capabilities.filter(
     (capability) => capability.provider === "hubspot",
   ).length;
+  const pageSpeedCapabilityCount = capabilities.filter(
+    (capability) => capability.provider === "pagespeed",
+  ).length;
   if (capabilities.length === 0) {
     throw new GkitFailure({
       code: "INTERNAL_ERROR",
@@ -49,27 +52,34 @@ export function buildGkitSchema(
         examples: ["gkit docs --provider dataforseo"],
       })
       .input(s(v.strictObject({ provider: v.optional(v.string()) }))),
-    ledger: group(
-      { description: "Spend ledger." },
+    operations: group(
+      { description: "Journal." },
       {
-        status: c
+        list: c
           .meta({
-            description: "Ledger status.",
-            examples: ["gkit ledger"],
+            description: "Summary.",
+            examples: ["gkit operations"],
           })
           .input(s(v.strictObject({}))),
+        show: c
+          .meta({
+            description: "One operation.",
+            examples: ["gkit operations show --id <operation-id>"],
+          })
+          .input(s(v.strictObject({ id: v.string() }))),
         reconcile: c
           .meta({
             description: "Manual settlement.",
             examples: [
-              "gkit ledger reconcile --attempt <id> --outcome confirmed_not_charged --evidence-ref ticket:123",
+              "gkit operations reconcile --id <operation-id> --result succeeded --evidence-ref ticket:123",
             ],
           })
           .input(
             s(
               v.strictObject({
-                attempt: v.string(),
-                outcome: v.picklist(["confirmed_charged", "confirmed_not_charged"]),
+                id: v.string(),
+                result: v.optional(v.picklist(["succeeded", "failed", "not_dispatched"])),
+                spendOutcome: v.optional(v.picklist(["confirmed_charged", "confirmed_not_charged"])),
                 evidenceRef: v.string(),
                 costUsd: v.optional(v.string()),
                 providerRequestId: v.optional(v.string()),
@@ -92,9 +102,9 @@ export function buildGkitSchema(
           {
             call: c
               .meta({
-                description: `Call ${dataForSeoCapabilityCount} operations: gkit --profile <app> dataforseo api call --operation-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run.`,
+                description: "gkit --profile <app> dataforseo api call --capability-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run.",
                 examples: [
-                  "gkit --profile <app> dataforseo api call --operation-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run",
+                  "gkit --profile <app> dataforseo api call --capability-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run",
                 ],
               })
               .input(s(v.strictObject({}))),
@@ -116,9 +126,9 @@ export function buildGkitSchema(
           {
             call: c
               .meta({
-                description: `Call ${bingCapabilityCount} reads: gkit --profile <app> bing api call --operation-id <id> --input @request.json --out <path> --dry-run.`,
+                description: "gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path> --dry-run.",
                 examples: [
-                  "gkit --profile <app> bing api call --operation-id <id> --input @request.json --out <path> --dry-run",
+                  "gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path> --dry-run",
                 ],
               })
               .input(s(v.strictObject({}))),
@@ -141,9 +151,9 @@ export function buildGkitSchema(
             call: c
               .meta({
                 description:
-                  "gkit --profile <app> posthog api call --operation-id posthog.query.run --input @request.json --out <path> --dry-run.",
+                  "gkit --profile <app> posthog api call --capability-id posthog.query.run --input @request.json --out <path> --dry-run.",
                 examples: [
-                  "gkit --profile <app> posthog api call --operation-id posthog.query.run --input @request.json --out <path> --dry-run",
+                  "gkit --profile <app> posthog api call --capability-id posthog.query.run --input @request.json --out <path> --dry-run",
                 ],
               })
               .input(s(v.strictObject({}))),
@@ -165,9 +175,9 @@ export function buildGkitSchema(
           {
             call: c
               .meta({
-                description: `Call ${googleAdsCapabilityCount} reads: gkit --profile <app> google-ads api call --operation-id <id> --input @request.json --out <path> --dry-run.`,
+                description: "gkit --profile <app> google-ads api call --capability-id <id> --input @request.json --out <path> --dry-run.",
                 examples: [
-                  "gkit --profile <app> google-ads api call --operation-id <id> --input @request.json --out <path> --dry-run",
+                  "gkit --profile <app> google-ads api call --capability-id <id> --input @request.json --out <path> --dry-run",
                 ],
               })
               .input(s(v.strictObject({}))),
@@ -189,9 +199,9 @@ export function buildGkitSchema(
           {
             call: c
               .meta({
-                description: `Call ${gscCapabilityCount}: gkit --profile <app> gsc api call --operation-id <id> --input @request.json --out <path> --dry-run.`,
+                description: "gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path> --dry-run.",
                 examples: [
-                  "gkit --profile <app> gsc api call --operation-id <id> --input @request.json --out <path> --dry-run",
+                  "gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path> --dry-run",
                 ],
               })
               .input(s(v.strictObject({}))),
@@ -213,9 +223,33 @@ export function buildGkitSchema(
           {
             call: c
               .meta({
-                description: `Call ${hubSpotCapabilityCount} reads: gkit --profile <app> hubspot api call --operation-id <id> --input @request.json --out <path> --dry-run.`,
+                description: "gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path> --dry-run.",
                 examples: [
-                  "gkit --profile <app> hubspot api call --operation-id <id> --input @request.json --out <path> --dry-run",
+                  "gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path> --dry-run",
+                ],
+              })
+              .input(s(v.strictObject({}))),
+          },
+        ),
+      },
+    ),
+    pagespeed: group(
+      { description: `${pageSpeedCapabilityCount} reviewed reads.` },
+      {
+        doctor: c
+          .meta({
+            description: "Profile check.",
+            examples: ["gkit --profile app-a pagespeed doctor"],
+          })
+          .input(s(v.strictObject({}))),
+        api: group(
+          { description: "Native API." },
+          {
+            call: c
+              .meta({
+                description: "Call pagespeed.run.",
+                examples: [
+                  "gkit --profile <app> pagespeed api call --capability-id pagespeed.run --input @request.json --out <path> --dry-run",
                 ],
               })
               .input(s(v.strictObject({}))),
@@ -279,7 +313,7 @@ function compactRootSchema(generated: string): string {
     generated
       // argc 7.6+ promotes authored examples into JSDoc blocks. Keep the 7.5
       // public surface: drop doctor noise, collapse everything else that is
-      // not describe / docs / ledger.reconcile.
+      // not describe / docs.
       .replace(
         /\n[ \t]*\/\*\*\n[ \t]*\* Profile check\.\n(?:[ \t]*\*\n[ \t]*\* @example\n(?:[ \t]*\* .+\n)+)?[ \t]*\*\/\n/g,
         "\n",
@@ -289,8 +323,7 @@ function compactRootSchema(generated: string): string {
         (block, indent: string, description: string) => {
           if (
             description.startsWith("Capability details.") ||
-            description.startsWith("Provider docs directory.") ||
-            description.startsWith("Manual settlement.")
+            description.startsWith("Provider docs directory.")
           ) {
             return block;
           }
@@ -315,35 +348,41 @@ function rewriteArgcExamples(
     .replace(/gkit docs "\{ provider: 'value' \}"/g, "gkit docs --provider <provider>")
     .replace(/gkit docs --provider \S+/g, "gkit docs --provider <provider>")
     .replace(
-      /gkit ledger reconcile --attempt <id> --outcome confirmed_not_charged --evidence-ref ticket:123/g,
-      "gkit ledger reconcile --attempt <id> --outcome <outcome> --evidence-ref <ref> [--cost-usd <decimal>]",
+      /gkit operations reconcile --id <operation-id> --result succeeded --evidence-ref ticket:123/g,
+      "gkit operations reconcile --id <operation-id> [--result <result>] [--spend-outcome <outcome> [--cost-usd <decimal>]] --evidence-ref <ref>",
     )
     .replace(
       /gkit bing\.api\.call "[^"]*"/g,
-      "gkit --profile <app> bing api call --operation-id <id> --input @request.json --out <path> --dry-run",
+      "gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path> --dry-run",
     )
     .replace(
-      /gkit ledger\.reconcile "[^"]*"/g,
-      "gkit ledger reconcile --attempt <id> --outcome <outcome> --evidence-ref <ref> [--cost-usd <decimal>]",
+      /gkit operations\.reconcile "[^"]*"/g,
+      "gkit operations reconcile --id <operation-id> [--result <result>] [--spend-outcome <outcome> [--cost-usd <decimal>]] --evidence-ref <ref>",
     )
+    .replace(/gkit operations\.show "[^"]*"/g, "gkit operations show --id <operation-id>")
+    .replace(/gkit operations\.list "[^"]*"/g, "gkit operations")
     .replace(
       /gkit dataforseo\.api\.call "[^"]*"/g,
-      "gkit --profile <app> dataforseo api call --operation-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run",
+      "gkit --profile <app> dataforseo api call --capability-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run",
     )
     .replace(
       /gkit posthog\.api\.call "[^"]*"/g,
-      "gkit --profile <app> posthog api call --operation-id posthog.query.run --input @request.json --out <path> --dry-run",
+      "gkit --profile <app> posthog api call --capability-id posthog.query.run --input @request.json --out <path> --dry-run",
     )
     .replace(
       /gkit google-ads\.api\.call "[^"]*"/g,
-      "gkit --profile <app> google-ads api call --operation-id <id> --input @request.json --out <path> --dry-run",
+      "gkit --profile <app> google-ads api call --capability-id <id> --input @request.json --out <path> --dry-run",
     )
     .replace(
       /gkit gsc\.api\.call "[^"]*"/g,
-      "gkit --profile <app> gsc api call --operation-id <id> --input @request.json --out <path> --dry-run",
+      "gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path> --dry-run",
+    )
+    .replace(
+      /gkit pagespeed\.api\.call "[^"]*"/g,
+      "gkit --profile <app> pagespeed api call --capability-id pagespeed.run --input @request.json --out <path> --dry-run",
     )
     .replace(
       /gkit hubspot\.api\.call "[^"]*"/g,
-      "gkit --profile <app> hubspot api call --operation-id <id> --input @request.json --out <path> --dry-run",
+      "gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path> --dry-run",
     );
 }

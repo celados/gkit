@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ParsedCommand } from "./args";
 import { serializeEnvelope } from "./envelope";
 import { executeGscCall } from "./execute-gsc";
+import { readJournal } from "./journal";
 import { loadExecutableManifest } from "./manifest";
 
 const temporaryDirectories: string[] = [];
@@ -51,6 +52,7 @@ describe("GSC sitemap submission execution boundary", () => {
       expect(fetch).not.toHaveBeenCalled();
       expect(deriveAccessToken).not.toHaveBeenCalled();
       await expect(readFile(fixture.outPath)).rejects.toThrow();
+      expect((await readJournal({ journalPath: fixture.journalPath })).events).toEqual([]);
     },
   );
 
@@ -74,6 +76,7 @@ describe("GSC sitemap submission execution boundary", () => {
     });
     expect(fetch).not.toHaveBeenCalled();
     expect(deriveAccessToken).not.toHaveBeenCalled();
+    expect((await readJournal({ journalPath: fixture.journalPath })).events).toEqual([]);
   });
 
   it("submits with the write scope and publishes a deterministic receipt for an empty 204", async () => {
@@ -112,8 +115,26 @@ describe("GSC sitemap submission execution boundary", () => {
         artifactFormat: "gkit-gsc-sitemap-submit-receipt",
         artifact: { path: expect.stringMatching(/receipt\.json$/), sha256: expect.any(String) },
       },
-      meta: { capability: "gsc.sitemaps.submit", effects: ["write"] },
+      meta: { capability: "gsc.sitemaps.submit", effects: ["write"], operationId: expect.any(String), spend: null },
     });
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.events.map((event) => event.type)).toEqual([
+      "attempt_started",
+      "attempt_settled",
+      "artifact_recorded",
+    ]);
+    expect(journal.operations[0]).toMatchObject({
+      started: {
+        operationId: result.envelope.meta?.operationId,
+        provider: "gsc",
+        capability: "gsc.sitemaps.submit",
+        effects: ["write"],
+        spend: null,
+      },
+      latestSettlement: { providerResult: "succeeded", errorCode: null },
+      state: "succeeded",
+    });
+    expect(await readFile(fixture.journalPath, "utf8")).not.toContain("write-token-secret");
     expect(JSON.parse(await readFile(fixture.outPath, "utf8"))).toEqual({
       feedpath,
       httpStatus: 204,
@@ -158,6 +179,12 @@ describe("GSC sitemap submission execution boundary", () => {
       },
     });
     expect(await readFile(fixture.outPath, "utf8")).toContain("PERMISSION_DENIED");
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.operations[0]?.latestSettlement).toMatchObject({
+      providerResult: "failed",
+      errorCode: "AUTH_FAILED",
+    });
+    expect(journal.operations[0]?.state).toBe("failed");
   });
 
   it("keeps read capabilities on the read-only scope without --allow-write", async () => {
@@ -166,7 +193,7 @@ describe("GSC sitemap submission execution boundary", () => {
     const result = await executeGscCall({
       command: {
         ...submitCommand(fixture.outPath, { allowWrite: false, dryRun: false }),
-        operationId: "gsc.sitemaps.get",
+        capabilityId: "gsc.sitemaps.get",
       },
       manifest: fixture.manifest,
       signal: new AbortController().signal,
@@ -194,7 +221,7 @@ function submitCommand(
   return {
     kind: "gsc-call",
     profileFlag: "app-a",
-    operationId: "gsc.sitemaps.submit",
+    capabilityId: "gsc.sitemaps.submit",
     input: JSON.stringify({ feedpath }),
     allowWrite: flags.allowWrite,
     out: outPath,
@@ -235,7 +262,12 @@ async function createFixture() {
   return {
     xdgConfigHome,
     outPath: join(root, "receipt.json"),
-    env: { TEST_GSC_SERVICE_ACCOUNT_FILE: serviceAccountPath, HOME: root },
+    journalPath: join(root, "state", "gkit", "operations.jsonl"),
+    env: {
+      TEST_GSC_SERVICE_ACCOUNT_FILE: serviceAccountPath,
+      HOME: root,
+      XDG_STATE_HOME: join(root, "state"),
+    },
     manifest: await loadExecutableManifest(
       new URL("../generated/gsc/manifest.json", import.meta.url).pathname,
     ),

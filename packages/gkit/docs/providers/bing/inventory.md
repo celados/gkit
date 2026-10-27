@@ -4,16 +4,17 @@ title: Bing Webmaster operation inventory
 description: >
   Generated inventory of pinned Bing Webmaster operations and their gkit exposure decisions.
 provider: bing
-inventoryRevision: 2026-07-14.slice4.bing.1
+inventoryRevision: 2026-10-27.bing.search-health.1
 ---
 
 # Bing Webmaster operation inventory
 
-This pinned inventory contains 17 operations: 17 executable and 0 inventory-only.
+This pinned inventory contains 21 operations: 21 executable and 0 inventory-only.
 Inventory-only operations cannot be routed by `gkit bing api call`.
 
 | Method | Path | Operation ID | Exposure | Decision |
 | --- | --- | --- | --- | --- |
+| `GET` | `/GetBlockedUrls` | `GetBlockedUrls` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.crawl.blocked-urls` |
 | `GET` | `/GetCrawlIssues` | `GetCrawlIssues` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.crawl.issues` |
 | `GET` | `/GetCrawlSettings` | `GetCrawlSettings` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.crawl.settings` |
 | `GET` | `/GetCrawlStats` | `GetCrawlStats` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.crawl.stats` |
@@ -29,5 +30,8 @@ Inventory-only operations cannot be routed by `gkit bing api call`.
 | `GET` | `/GetRankAndTrafficStats` | `GetRankAndTrafficStats` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.traffic.rank` |
 | `GET` | `/GetUrlInfo` | `GetUrlInfo` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.urls.info` |
 | `GET` | `/GetUrlLinks` | `GetUrlLinks` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.links.url` |
+| `GET` | `/GetUrlSubmissionQuota` | `GetUrlSubmissionQuota` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.urls.submission-quota` |
 | `GET` | `/GetUrlTrafficInfo` | `GetUrlTrafficInfo` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.urls.traffic` |
 | `GET` | `/GetUserSites` | `GetUserSites` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.sites.list` |
+| `POST` | `/SubmitFeed` | `SubmitFeed` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.sitemaps.submit` |
+| `POST` | `/SubmitUrlbatch` | `SubmitUrlbatch` | `executable` | Reviewed adapter, input, effect, and response contracts are committed.; capability: `bing.urls.submit` |

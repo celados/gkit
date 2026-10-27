@@ -1,6 +1,6 @@
 {
   "name": "gkit",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "private": true,
   "description": "Profile-bound, agent-first growth provider CLI.",
   "bin": {
@@ -27,6 +27,8 @@
     "generate:gsc:check": "bun run ./scripts/generate-gsc.ts --check",
     "generate:hubspot": "bun run ./scripts/generate-hubspot.ts",
     "generate:hubspot:check": "bun run ./scripts/generate-hubspot.ts --check",
+    "generate:pagespeed": "bun run ./scripts/generate-pagespeed.ts",
+    "generate:pagespeed:check": "bun run ./scripts/generate-pagespeed.ts --check",
     "generate:posthog": "bun run ./scripts/generate-posthog.ts",
     "generate:posthog:check": "bun run ./scripts/generate-posthog.ts --check",
     "eval:slice5": "bun run ./src/eval.ts",

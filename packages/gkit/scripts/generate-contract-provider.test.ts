@@ -5,8 +5,9 @@ import { generateContractProviderArtifacts } from "./generate-contract-provider"
 const packageRoot = new URL("..", import.meta.url).pathname;
 
 describe.each([
-  ["bing", 17, "bing.sites.list"],
+  ["bing", 21, "bing.sites.list"],
   ["gsc", 6, "gsc.properties.list"],
+  ["pagespeed", 1, "pagespeed.run"],
 ] as const)("%s contract generator", (provider, expectedCount, expectedCapability) => {
   it("is deterministic and binds reviewed capabilities to the pinned source", async () => {
     const first = await generateContractProviderArtifacts({ packageRoot, provider });

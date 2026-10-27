@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ParsedCommand } from "./args";
 import { serializeEnvelope } from "./envelope";
 import { executeHubSpotCall } from "./execute-hubspot";
+import { readJournal } from "./journal";
 import { loadExecutableManifest } from "./manifest";
 
 const temporaryDirectories: string[] = [];
@@ -25,7 +26,7 @@ describe("HubSpot execution boundary", () => {
       command: command(fixture.outPath, true),
       manifest: fixture.manifest,
       signal: new AbortController().signal,
-      env: {},
+      env: { XDG_STATE_HOME: fixture.stateHome },
       xdgConfigHome: fixture.xdgConfigHome,
       fetch,
     });
@@ -44,6 +45,7 @@ describe("HubSpot execution boundary", () => {
     });
     expect(fetch).not.toHaveBeenCalled();
     await expect(readFile(fixture.outPath)).rejects.toThrow();
+    expect((await readJournal({ journalPath: fixture.journalPath })).events).toEqual([]);
   });
 
   it("publishes bounded CRM facts and returns only a compact receipt", async () => {
@@ -52,7 +54,7 @@ describe("HubSpot execution boundary", () => {
       command: command(fixture.outPath, false),
       manifest: fixture.manifest,
       signal: new AbortController().signal,
-      env: { TEST_HUBSPOT_ACCESS_TOKEN: "private-secret" },
+      env: { TEST_HUBSPOT_ACCESS_TOKEN: "private-secret", XDG_STATE_HOME: fixture.stateHome },
       xdgConfigHome: fixture.xdgConfigHome,
       fetch: async (_input, init) => {
         expect(new Headers(init?.headers).get("authorization")).toBe("Bearer private-secret");
@@ -76,6 +78,23 @@ describe("HubSpot execution boundary", () => {
       },
     });
     expect(await readFile(fixture.outPath, "utf8")).toContain("a@b.test");
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.events.map((event) => event.type)).toEqual([
+      "attempt_started",
+      "attempt_settled",
+      "artifact_recorded",
+    ]);
+    expect(journal.operations[0]).toMatchObject({
+      started: {
+        operationId: result.envelope.meta?.operationId,
+        provider: "hubspot",
+        capability: "hubspot.crm.objects.list",
+        effects: ["read"],
+        spend: null,
+      },
+      latestSettlement: { providerResult: "succeeded", providerRequestId: "request_123" },
+      state: "succeeded",
+    });
     const serialized = serializeEnvelope(result.envelope, result.secrets);
     expect(serialized).not.toContain("private-secret");
     expect(serialized).not.toContain("a@b.test");
@@ -89,7 +108,7 @@ describe("HubSpot execution boundary", () => {
       command: command(fixture.outPath, false),
       manifest: fixture.manifest,
       signal: new AbortController().signal,
-      env: { TEST_HUBSPOT_ACCESS_TOKEN: "private-secret" },
+      env: { TEST_HUBSPOT_ACCESS_TOKEN: "private-secret", XDG_STATE_HOME: fixture.stateHome },
       xdgConfigHome: fixture.xdgConfigHome,
       fetch,
     });
@@ -105,7 +124,7 @@ describe("HubSpot execution boundary", () => {
       command: command(fixture.outPath, false),
       manifest: fixture.manifest,
       signal: new AbortController().signal,
-      env: { TEST_HUBSPOT_ACCESS_TOKEN: "private-secret" },
+      env: { TEST_HUBSPOT_ACCESS_TOKEN: "private-secret", XDG_STATE_HOME: fixture.stateHome },
       xdgConfigHome: fixture.xdgConfigHome,
       fetch: async () =>
         new Response(JSON.stringify({ results: [{ id: "1", value: "private-secret" }] }), {
@@ -128,7 +147,7 @@ describe("HubSpot execution boundary", () => {
       command: command(fixture.outPath, false),
       manifest: fixture.manifest,
       signal: new AbortController().signal,
-      env: { TEST_HUBSPOT_ACCESS_TOKEN: "private-secret" },
+      env: { TEST_HUBSPOT_ACCESS_TOKEN: "private-secret", XDG_STATE_HOME: fixture.stateHome },
       xdgConfigHome: fixture.xdgConfigHome,
       fetch: async () =>
         new Response(
@@ -150,6 +169,12 @@ describe("HubSpot execution boundary", () => {
       "provider-only diagnostic",
     );
     expect(await readFile(fixture.outPath, "utf8")).toContain("provider-only diagnostic");
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.operations[0]?.latestSettlement).toMatchObject({
+      providerResult: "failed",
+      errorCode: "RATE_LIMITED",
+    });
+    expect(journal.operations[0]?.state).toBe("failed");
   });
 
   it("cancels before provider handoff with exit 130 and no fetch", async () => {
@@ -161,7 +186,7 @@ describe("HubSpot execution boundary", () => {
       command: command(fixture.outPath, false),
       manifest: fixture.manifest,
       signal: controller.signal,
-      env: { TEST_HUBSPOT_ACCESS_TOKEN: "private-secret" },
+      env: { TEST_HUBSPOT_ACCESS_TOKEN: "private-secret", XDG_STATE_HOME: fixture.stateHome },
       xdgConfigHome: fixture.xdgConfigHome,
       fetch,
     });
@@ -172,6 +197,7 @@ describe("HubSpot execution boundary", () => {
       error: { code: "CANCELLED", outcome: "not_dispatched" },
     });
     expect(fetch).not.toHaveBeenCalled();
+    expect((await readJournal({ journalPath: fixture.journalPath })).events).toEqual([]);
   });
 });
 
@@ -182,7 +208,7 @@ function command(
   return {
     kind: "hubspot-call",
     profileFlag: "app-a",
-    operationId: "hubspot.crm.objects.list",
+    capabilityId: "hubspot.crm.objects.list",
     input: JSON.stringify({ objectType: "contacts", properties: ["email"], limit: 1 }),
     out: outPath,
     force: false,
@@ -213,6 +239,8 @@ async function createFixture() {
   return {
     root,
     xdgConfigHome,
+    stateHome: join(root, "state"),
+    journalPath: join(root, "state", "gkit", "operations.jsonl"),
     outPath: join(root, "result.json"),
     manifest: await loadExecutableManifest(
       new URL("../generated/hubspot/manifest.json", import.meta.url).pathname,

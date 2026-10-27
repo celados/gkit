@@ -19,11 +19,10 @@ export async function executeSite(command: SiteCommand, signal: AbortSignal): Pr
     provider: null,
     capability: `site.${command.action}`,
     effects: [],
-    cost: null,
+    operationId: null,
     artifact: null,
-    attemptId: null,
-    spendOutcome: null,
     providerRequestId: null,
+    spend: null,
   };
   try {
     let data: unknown;
