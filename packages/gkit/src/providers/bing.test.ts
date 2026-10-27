@@ -76,4 +76,69 @@ describe("Bing adapter", () => {
     });
     expect(buildBingUrls({ method: "GetUserSites", params: {} }).requestUrl).toBeNull();
   });
+
+  it("POSTs URL and sitemap submissions as JSON with the site in the body", async () => {
+    const captured: { url: string; init: RequestInit | undefined }[] = [];
+    const fetch = async (input: string | URL | Request, init?: RequestInit) => {
+      captured.push({ url: String(input), init });
+      return new Response(JSON.stringify({ d: null }), { status: 200 });
+    };
+    const urls = await dispatchBing({
+      operation: {
+        adapterKey: "urls.submit",
+        input: { urlList: ["https://example.com/a", "https://example.com/b"] },
+      },
+      config: { siteUrl: "https://example.com/" },
+      credentials: { apiKey: "key" },
+      signal: new AbortController().signal,
+      fetch,
+    });
+    const feed = await dispatchBing({
+      operation: { adapterKey: "sitemaps.submit", input: { feedUrl: "https://example.com/sitemap.xml" } },
+      config: { siteUrl: "https://example.com/" },
+      credentials: { apiKey: "key" },
+      signal: new AbortController().signal,
+      fetch,
+    });
+
+    expect(urls).toMatchObject({ ok: true, data: { rowCount: 0 } });
+    expect(feed).toMatchObject({ ok: true });
+    expect(captured.map(({ url, init }) => [new URL(url).pathname, init?.method])).toEqual([
+      ["/webmaster/api.svc/json/SubmitUrlbatch", "POST"],
+      ["/webmaster/api.svc/json/SubmitFeed", "POST"],
+    ]);
+    expect(new URL(captured[0]!.url).searchParams.has("siteUrl")).toBe(false);
+    expect(JSON.parse(String(captured[0]!.init?.body))).toEqual({
+      siteUrl: "https://example.com/",
+      urlList: ["https://example.com/a", "https://example.com/b"],
+    });
+    expect(JSON.parse(String(captured[1]!.init?.body))).toEqual({
+      siteUrl: "https://example.com/",
+      feedUrl: "https://example.com/sitemap.xml",
+    });
+  });
+
+  it("plans submissions as POST and rejects URLs outside the site before dispatch", () => {
+    expect(
+      planBingRequest(
+        { adapterKey: "urls.submit", input: { urlList: ["https://example.com/a"] } },
+        { siteUrl: "https://example.com/" },
+      ),
+    ).toMatchObject({ method: "POST", endpoint: "https://ssl.bing.com/webmaster/api.svc/json/SubmitUrlbatch" });
+    expect(
+      planBingRequest({ adapterKey: "urls.submission-quota", input: {} }, { siteUrl: "https://example.com/" }),
+    ).toMatchObject({ method: "GET" });
+    expect(() =>
+      planBingRequest(
+        { adapterKey: "urls.submit", input: { urlList: ["https://other.example/a"] } },
+        { siteUrl: "https://example.com/" },
+      ),
+    ).toThrow("must belong to");
+    expect(() =>
+      planBingRequest(
+        { adapterKey: "sitemaps.submit", input: { feedUrl: "https://other.example/sitemap.xml" } },
+        { siteUrl: "https://example.com/" },
+      ),
+    ).toThrow("must belong to");
+  });
 });

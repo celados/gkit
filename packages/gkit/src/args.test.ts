@@ -165,7 +165,7 @@ describe("gkit argv parser", () => {
         profileFlag: "app-a",
         capabilityId,
         input: "{}",
-        ...(provider === "gsc" ? { allowWrite: false } : {}),
+        ...(provider === "hubspot" ? {} : { allowWrite: false }),
         out: "result.json",
         force: false,
         dryRun: true,
@@ -173,7 +173,10 @@ describe("gkit argv parser", () => {
     },
   );
 
-  it("parses --allow-write for GSC calls so the effect gate receives it", () => {
+  it("parses --allow-write for GSC and Bing calls so the effect gate receives it", () => {
+    expect(
+      parseArgs(["bing", "api", "call", "--capability-id", "bing.urls.submit", "--input", "{}", "--allow-write"]),
+    ).toMatchObject({ kind: "bing-call", allowWrite: true });
     expect(
       parseArgs([
         "--profile",
@@ -195,7 +198,7 @@ describe("gkit argv parser", () => {
     ).toThrow("does not accept a value");
   });
 
-  it.each(["bing", "hubspot", "dataforseo"] as const)(
+  it.each(["hubspot", "dataforseo"] as const)(
     "rejects --allow-write for %s, which has no write capabilities",
     (provider) => {
       expect(() =>

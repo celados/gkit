@@ -1,8 +1,8 @@
 {
   "version": 1,
   "provider": "bing",
-  "manifestRevision": "2026-07-14.slice4.bing.1",
-  "reviewedAt": "2026-07-14T06:00:00.000Z",
+  "manifestRevision": "2026-10-27.bing.search-health.1",
+  "reviewedAt": "2026-10-27T04:00:00.000Z",
   "entries": [
     {
       "path": "/GetUserSites",
@@ -496,6 +496,160 @@
           {
             "input": { "url": "https://example.com/docs" },
             "command": "gkit --profile <app> bing api call --capability-id bing.urls.traffic --input @request.json --out bing-url-traffic.json --dry-run"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/GetBlockedUrls",
+      "method": "get",
+      "operationId": "GetBlockedUrls",
+      "exposure": "executable",
+      "capability": {
+        "id": "bing.crawl.blocked-urls",
+        "provider": "bing",
+        "revision": "1",
+        "adapterKey": "crawl.blocked-urls",
+        "title": "Read Bing blocked URLs",
+        "description": "Read URLs and directories blocked from Bing results for one site.",
+        "effects": ["read"],
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "siteUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          }
+        },
+        "examples": [
+          {
+            "input": {},
+            "command": "gkit --profile <app> bing api call --capability-id bing.crawl.blocked-urls --input '{}' --out bing-blocked-urls.json --dry-run"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/GetUrlSubmissionQuota",
+      "method": "get",
+      "operationId": "GetUrlSubmissionQuota",
+      "exposure": "executable",
+      "capability": {
+        "id": "bing.urls.submission-quota",
+        "provider": "bing",
+        "revision": "1",
+        "adapterKey": "urls.submission-quota",
+        "title": "Read Bing URL submission quota",
+        "description": "Read the remaining daily and monthly URL submission quota for one site.",
+        "effects": ["read"],
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "siteUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          }
+        },
+        "examples": [
+          {
+            "input": {},
+            "command": "gkit --profile <app> bing api call --capability-id bing.urls.submission-quota --input '{}' --out bing-url-quota.json --dry-run"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/SubmitUrlbatch",
+      "method": "post",
+      "operationId": "SubmitUrlbatch",
+      "exposure": "executable",
+      "capability": {
+        "id": "bing.urls.submit",
+        "provider": "bing",
+        "revision": "1",
+        "adapterKey": "urls.submit",
+        "title": "Submit URLs to Bing",
+        "description": "Submit up to 500 URLs of one site for Bing crawling; consumes the daily URL submission quota.",
+        "effects": ["write"],
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["urlList"],
+          "properties": {
+            "siteUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            },
+            "urlList": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 500,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              }
+            }
+          }
+        },
+        "examples": [
+          {
+            "input": {
+              "urlList": ["https://example.com/new-page"]
+            },
+            "command": "gkit --profile <app> bing api call --capability-id bing.urls.submit --input @request.json --allow-write --out bing-url-submit.json --dry-run"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/SubmitFeed",
+      "method": "post",
+      "operationId": "SubmitFeed",
+      "exposure": "executable",
+      "capability": {
+        "id": "bing.sitemaps.submit",
+        "provider": "bing",
+        "revision": "1",
+        "adapterKey": "sitemaps.submit",
+        "title": "Submit a sitemap to Bing",
+        "description": "Submit or resubmit one sitemap or feed URL for one site.",
+        "effects": ["write"],
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["feedUrl"],
+          "properties": {
+            "siteUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            },
+            "feedUrl": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          }
+        },
+        "examples": [
+          {
+            "input": {
+              "feedUrl": "https://example.com/sitemap.xml"
+            },
+            "command": "gkit --profile <app> bing api call --capability-id bing.sitemaps.submit --input @request.json --allow-write --out bing-sitemap-submit.json --dry-run"
           }
         ]
       }

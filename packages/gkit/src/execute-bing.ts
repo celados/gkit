@@ -30,6 +30,10 @@ export const bingAdapterKeys = new Set([
   "sitemaps.get",
   "urls.info",
   "urls.traffic",
+  "crawl.blocked-urls",
+  "urls.submission-quota",
+  "urls.submit",
+  "sitemaps.submit",
 ]);
 
 export async function executeBingCall(options: {

@@ -41,6 +41,7 @@ export type ParsedCommand =
       profileFlag: string | null;
       capabilityId: string;
       input: string;
+      allowWrite: boolean;
       out: string | null;
       force: boolean;
       dryRun: boolean;
@@ -295,7 +296,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
 
   const booleanNames = new Set(["--allow-spend", "--allow-write", "--force", "--dry-run"]);
   const flags = parseFlags(rest.slice(3), booleanNames);
-  if (provider === "gsc") {
+  if (provider === "gsc" || provider === "bing") {
     requireOnly(flags, [
       "--capability-id",
       "--input",
@@ -305,7 +306,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
       "--dry-run",
     ]);
     return {
-      kind: "gsc-call",
+      kind: provider === "gsc" ? "gsc-call" : "bing-call",
       profileFlag,
       capabilityId: requiredString(flags, "--capability-id"),
       input: requiredString(flags, "--input"),
@@ -323,9 +324,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
           ? "posthog-call"
           : provider === "hubspot"
             ? "hubspot-call"
-          : provider === "google-ads"
-            ? "google-ads-call"
-            : "bing-call",
+          : "google-ads-call",
       profileFlag,
       capabilityId: requiredString(flags, "--capability-id"),
       input: requiredString(flags, "--input"),
@@ -376,6 +375,7 @@ export function renderHelp(): string {
     "  gkit --profile <app> bing doctor",
     "  gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path> --dry-run",
     "  gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path>",
+    "  Write capabilities (bing.urls.submit, bing.sitemaps.submit) also require --allow-write.",
     "",
     "PostHog:",
     "  gkit --profile <app> posthog doctor",

@@ -22,6 +22,10 @@
     { "path": "/GetFeeds", "method": "get", "operationId": "GetFeeds" },
     { "path": "/GetFeedDetails", "method": "get", "operationId": "GetFeedDetails" },
     { "path": "/GetUrlInfo", "method": "get", "operationId": "GetUrlInfo" },
-    { "path": "/GetUrlTrafficInfo", "method": "get", "operationId": "GetUrlTrafficInfo" }
+    { "path": "/GetUrlTrafficInfo", "method": "get", "operationId": "GetUrlTrafficInfo" },
+    { "path": "/GetBlockedUrls", "method": "get", "operationId": "GetBlockedUrls" },
+    { "path": "/GetUrlSubmissionQuota", "method": "get", "operationId": "GetUrlSubmissionQuota" },
+    { "path": "/SubmitUrlbatch", "method": "post", "operationId": "SubmitUrlbatch" },
+    { "path": "/SubmitFeed", "method": "post", "operationId": "SubmitFeed" }
   ]
 }

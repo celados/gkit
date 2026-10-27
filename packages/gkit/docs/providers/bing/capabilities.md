@@ -5,13 +5,45 @@ description: >
   Generated, searchable documentation for the reviewed bing operations
   that gkit is allowed to route and execute.
 provider: bing
-manifestRevision: 2026-07-14.slice4.bing.1
+manifestRevision: 2026-10-27.bing.search-health.1
 ---
 
 # bing reviewed executable capabilities
 
 This file is byte-stably rendered from `generated/bing/manifest.json`.
 The committed manifest remains the only runtime, validation, effect, cost, and discovery source.
+
+## bing.crawl.blocked-urls
+
+Read URLs and directories blocked from Bing results for one site.
+
+- Provider: `bing`
+- Adapter key: `crawl.blocked-urls`
+- Capability revision: `1`
+- Effects: `read`
+
+### Input schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "siteUrl": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    }
+  }
+}
+```
+
+### Invocation
+
+```bash
+gkit --profile <app> bing api call --capability-id bing.crawl.blocked-urls --input '{}' --out bing-blocked-urls.json --dry-run
+```
 
 ## bing.crawl.issues
 
@@ -261,6 +293,46 @@ List top-level feeds or sitemaps for one site.
 
 ```bash
 gkit --profile <app> bing api call --capability-id bing.sitemaps.list --input '{}' --out bing-sitemaps.json --dry-run
+```
+
+## bing.sitemaps.submit
+
+Submit or resubmit one sitemap or feed URL for one site.
+
+- Provider: `bing`
+- Adapter key: `sitemaps.submit`
+- Capability revision: `1`
+- Effects: `write`
+
+### Input schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "feedUrl"
+  ],
+  "properties": {
+    "siteUrl": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "feedUrl": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    }
+  }
+}
+```
+
+### Invocation
+
+```bash
+gkit --profile <app> bing api call --capability-id bing.sitemaps.submit --input @request.json --allow-write --out bing-sitemap-submit.json --dry-run
 ```
 
 ## bing.sites.list
@@ -589,6 +661,84 @@ Read Bing index information for one URL or domain target.
 
 ```bash
 gkit --profile <app> bing api call --capability-id bing.urls.info --input @request.json --out bing-url-info.json --dry-run
+```
+
+## bing.urls.submission-quota
+
+Read the remaining daily and monthly URL submission quota for one site.
+
+- Provider: `bing`
+- Adapter key: `urls.submission-quota`
+- Capability revision: `1`
+- Effects: `read`
+
+### Input schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "siteUrl": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    }
+  }
+}
+```
+
+### Invocation
+
+```bash
+gkit --profile <app> bing api call --capability-id bing.urls.submission-quota --input '{}' --out bing-url-quota.json --dry-run
+```
+
+## bing.urls.submit
+
+Submit up to 500 URLs of one site for Bing crawling; consumes the daily URL submission quota.
+
+- Provider: `bing`
+- Adapter key: `urls.submit`
+- Capability revision: `1`
+- Effects: `write`
+
+### Input schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "urlList"
+  ],
+  "properties": {
+    "siteUrl": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "urlList": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2048
+      }
+    }
+  }
+}
+```
+
+### Invocation
+
+```bash
+gkit --profile <app> bing api call --capability-id bing.urls.submit --input @request.json --allow-write --out bing-url-submit.json --dry-run
 ```
 
 ## bing.urls.traffic
