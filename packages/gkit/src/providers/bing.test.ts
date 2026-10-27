@@ -21,7 +21,7 @@ describe("Bing adapter", () => {
     });
 
     expect(capturedUrl).toContain(`apikey=${encodeURIComponent(apiKey)}`);
-    expect(new URL(capturedUrl).searchParams.get("query")).toBe(JSON.stringify("clone site"));
+    expect(new URL(capturedUrl).searchParams.get("query")).toBe("clone site");
     expect(result).toEqual(
       expect.objectContaining({
         ok: true,
@@ -70,9 +70,9 @@ describe("Bing adapter", () => {
     expect(plan).toEqual({
       method: "GET",
       endpoint:
-        "https://ssl.bing.com/webmaster/api.svc/json/GetUrlLinks?siteUrl=https%3A%2F%2Fexample.com%2F&link=%22https%3A%2F%2Fexample.com%2Fdocs%22&page=0",
+        "https://ssl.bing.com/webmaster/api.svc/json/GetUrlLinks?siteUrl=https%3A%2F%2Fexample.com%2F&link=https%3A%2F%2Fexample.com%2Fdocs&page=0",
       diagnosticUrl:
-        "https://ssl.bing.com/webmaster/api.svc/json/GetUrlLinks?siteUrl=https%3A%2F%2Fexample.com%2F&link=%22https%3A%2F%2Fexample.com%2Fdocs%22&page=0",
+        "https://ssl.bing.com/webmaster/api.svc/json/GetUrlLinks?siteUrl=https%3A%2F%2Fexample.com%2F&link=https%3A%2F%2Fexample.com%2Fdocs&page=0",
     });
     expect(buildBingUrls({ method: "GetUserSites", params: {} }).requestUrl).toBeNull();
   });
@@ -140,5 +140,13 @@ describe("Bing adapter", () => {
         { siteUrl: "https://example.com/" },
       ),
     ).toThrow("must belong to");
+  });
+
+  it("sends URL-valued parameters unquoted so Bing accepts their scheme", () => {
+    const plan = planBingRequest(
+      { adapterKey: "urls.info", input: { url: "https://example.com/docs" } },
+      { siteUrl: "https://example.com/" },
+    );
+    expect(new URL(plan.endpoint).searchParams.get("url")).toBe("https://example.com/docs");
   });
 });

@@ -13,7 +13,7 @@ export type BingOperation = Readonly<{
 }>;
 export type BingFetch = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
-type QueryValue = { value: string | number; jsonString?: boolean };
+type QueryValue = { value: string | number };
 type QueryParams = Record<string, QueryValue | undefined>;
 
 const methodByAdapter = new Map<string, string>([
@@ -64,7 +64,7 @@ export function buildBingUrls(options: {
   const url = new URL(`${options.baseUrl ?? bingBaseUrl}/${options.method}`);
   for (const [name, item] of Object.entries(options.params)) {
     if (!item) continue;
-    url.searchParams.set(name, item.jsonString ? JSON.stringify(item.value) : String(item.value));
+    url.searchParams.set(name, String(item.value));
   }
   const diagnosticUrl = url.toString();
   if (!options.apiKey) return { requestUrl: null, diagnosticUrl };
@@ -202,28 +202,28 @@ function buildRequest(
   switch (operation.adapterKey) {
     case "traffic.query":
     case "traffic.query-pages":
-      params.query = jsonStringInput(operation.input, "query");
+      params.query = requiredStringInput(operation.input, "query");
       break;
     case "traffic.page-queries":
-      params.page = jsonStringInput(operation.input, "pageUrl");
+      params.page = requiredStringInput(operation.input, "pageUrl");
       break;
     case "traffic.query-page":
-      params.query = jsonStringInput(operation.input, "query");
-      params.page = jsonStringInput(operation.input, "pageUrl");
+      params.query = requiredStringInput(operation.input, "query");
+      params.page = requiredStringInput(operation.input, "pageUrl");
       break;
     case "links.pages":
       params.page = { value: integerInput(operation.input, "page", 0) };
       break;
     case "links.url":
-      params.link = jsonStringInput(operation.input, "link");
+      params.link = requiredStringInput(operation.input, "link");
       params.page = { value: integerInput(operation.input, "page", 0) };
       break;
     case "sitemaps.get":
-      params.feedUrl = jsonStringInput(operation.input, "feedUrl");
+      params.feedUrl = requiredStringInput(operation.input, "feedUrl");
       break;
     case "urls.info":
     case "urls.traffic":
-      params.url = jsonStringInput(operation.input, "url");
+      params.url = requiredStringInput(operation.input, "url");
       break;
   }
   return { method, params };
@@ -261,10 +261,12 @@ function stringInput(input: Readonly<Record<string, unknown>>, key: string): str
   return typeof value === "string" ? value : undefined;
 }
 
-function jsonStringInput(input: Readonly<Record<string, unknown>>, key: string): QueryValue {
+function requiredStringInput(input: Readonly<Record<string, unknown>>, key: string): QueryValue {
   const value = stringInput(input, key);
   if (!value) throw new TypeError(`Bing ${key} is required.`);
-  return { value, jsonString: true };
+  // Bing parses these as plain query strings; JSON-quoting a URL is rejected
+  // with SiteUriSchemeIsNotSupported / InvalidUrl.
+  return { value };
 }
 
 function integerInput(
