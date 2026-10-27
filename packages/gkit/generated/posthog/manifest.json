@@ -70,7 +70,7 @@
             "query": "SELECT event, count() AS total FROM events GROUP BY event ORDER BY total DESC",
             "limit": 20
           },
-          "command": "gkit --profile clonesite.ai posthog api call --operation-id posthog.query.run --input @req.json --out posthog-query.json --dry-run"
+          "command": "gkit --profile clonesite.ai posthog api call --capability-id posthog.query.run --input @req.json --out posthog-query.json --dry-run"
         },
         {
           "title": "Live call after reviewing the dry-run",
@@ -78,7 +78,7 @@
             "query": "SELECT event, count() AS total FROM events GROUP BY event ORDER BY total DESC",
             "limit": 20
           },
-          "command": "gkit --profile clonesite.ai posthog api call --operation-id posthog.query.run --input @req.json --out posthog-query.json"
+          "command": "gkit --profile clonesite.ai posthog api call --capability-id posthog.query.run --input @req.json --out posthog-query.json"
         }
       ]
     }

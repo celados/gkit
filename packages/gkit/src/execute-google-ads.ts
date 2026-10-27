@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { Buffer } from "node:buffer";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -10,8 +10,16 @@ import {
   type ArtifactReservation,
 } from "./artifact";
 import type { ParsedCommand } from "./args";
+import { sha256CanonicalJson } from "./canonical";
 import { type EnvelopeMeta, GkitFailure, SecretRegistry, toFailureEnvelope } from "./envelope";
 import type { ExecuteResult } from "./execute";
+import { defaultJournalPath, JournalError } from "./journal";
+import {
+  defaultJournalPort,
+  providerResultOf,
+  startCostFreeOperation,
+  type JournalPort,
+} from "./operation-recorder";
 import {
   readGoogleAdsServiceAccount,
   resolveGoogleAdsServiceAccountPath,
@@ -57,6 +65,8 @@ export type GoogleAdsExecuteDependencies = {
       signal: AbortSignal;
     }) => GoogleAdsDispatch;
   }>;
+  journal: JournalPort;
+  randomOperationId: () => string;
 };
 
 const defaultDependencies: GoogleAdsExecuteDependencies = {
@@ -66,6 +76,8 @@ const defaultDependencies: GoogleAdsExecuteDependencies = {
   reserveArtifactDestination,
   loadGoogleAdsAuth: async () => await import("./providers/google-ads-auth"),
   loadGoogleAdsAdapter: async () => await import("./providers/google-ads"),
+  journal: defaultJournalPort,
+  randomOperationId: randomUUID,
 };
 
 const adapterKeys = new Set<GoogleAdsAdapterKey>([
@@ -81,6 +93,7 @@ type ExecutionContext = {
   profile: string | null;
   capability: string | null;
   effects: string[];
+  operationId: string | null;
   providerRequestId: string | null;
   artifact: ArtifactReceipt | null;
 };
@@ -91,11 +104,10 @@ function contextMeta(context: ExecutionContext): EnvelopeMeta {
     provider: "google-ads",
     capability: context.capability,
     effects: context.effects,
-    cost: null,
+    operationId: context.operationId,
     artifact: context.artifact,
-    attemptId: null,
-    spendOutcome: null,
     providerRequestId: context.providerRequestId,
+    spend: null,
   };
 }
 
@@ -106,6 +118,7 @@ export async function executeGoogleAdsCall(options: {
   env?: Readonly<Record<string, string | undefined>>;
   xdgConfigHome?: string;
   home?: string;
+  journalPath?: string;
   dependencies?: Partial<GoogleAdsExecuteDependencies>;
 }): Promise<ExecuteResult> {
   const dependencies = { ...defaultDependencies, ...options.dependencies };
@@ -114,6 +127,7 @@ export async function executeGoogleAdsCall(options: {
     profile: null,
     capability: null,
     effects: [],
+    operationId: null,
     providerRequestId: null,
     artifact: null,
   };
@@ -123,7 +137,7 @@ export async function executeGoogleAdsCall(options: {
 
   try {
     throwIfCancelled(options.signal);
-    const record = getManifestRecord(options.manifest, options.command.operationId);
+    const record = getManifestRecord(options.manifest, options.command.capabilityId);
     context.capability = record.id;
     context.effects = [...record.effects];
     if (
@@ -245,6 +259,21 @@ export async function executeGoogleAdsCall(options: {
     throwIfCancelled(options.signal);
 
     const adapter = await dependencies.loadGoogleAdsAdapter();
+    throwIfCancelled(options.signal);
+    const journaled = await startCostFreeOperation({
+      journal: dependencies.journal,
+      journalPath: options.journalPath ?? defaultJournalPath(env),
+      attempt: {
+        operationId: dependencies.randomOperationId(),
+        profile: profile.name,
+        provider: "google-ads",
+        capability: record.id,
+        capabilityRevision: record.revision,
+        effects: record.effects,
+        inputSha256: sha256CanonicalJson(input),
+      },
+    });
+    context.operationId = journaled.operationId;
     const dispatch = adapter.createGoogleAdsDispatch({
       operation,
       config,
@@ -258,12 +287,45 @@ export async function executeGoogleAdsCall(options: {
         secretValues: [developerToken, accessToken, serviceAccount.privateKey],
       });
     } catch (error) {
+      // The streamed response was not captured, so the provider result stays unknown.
+      await journaled
+        .settle({ providerResult: "unknown", errorCode: "LOCAL_IO_ERROR" })
+        .catch(() => undefined);
       throw normalizeArtifactError(error);
     }
-    const providerResult = await dispatch.result;
+    let providerResult: Awaited<typeof dispatch.result>;
+    try {
+      providerResult = await dispatch.result;
+    } catch {
+      providerResult = {
+        ok: false,
+        code: "UNKNOWN_OUTCOME",
+        message: "The streamed Google Ads response ended without a confirmed outcome.",
+        retryable: false,
+        outcome: "unknown",
+        details: null,
+        providerRequestId: null,
+      };
+    }
     context.providerRequestId = safeRequestId(providerResult.providerRequestId, secrets);
     await reservation.release();
     reservation = null;
+    try {
+      await journaled.settle({
+        providerResult: providerResultOf(providerResult),
+        errorCode: providerResult.ok ? null : providerResult.code,
+        providerRequestId: context.providerRequestId,
+      });
+      if (context.artifact) await journaled.recordArtifact(context.artifact);
+    } catch {
+      throw new GkitFailure({
+        code: "LOCAL_IO_ERROR",
+        message: "The Google Ads response completed, but the operation journal could not record it.",
+        hint: "Inspect gkit operations and the journal lock before repeating the request.",
+        outcome: providerResult.ok ? "confirmed" : providerResult.outcome,
+        meta: contextMeta(context),
+      });
+    }
 
     if (!providerResult.ok) {
       throw new GkitFailure({
@@ -385,6 +447,15 @@ function normalizeArtifactError(error: unknown): ArtifactError {
 }
 
 function normalizeExecutionError(error: unknown, context: ExecutionContext): GkitFailure {
+  if (error instanceof JournalError) {
+    return new GkitFailure({
+      code: "LOCAL_IO_ERROR",
+      message: "The operation journal could not record the provider attempt, so it was not dispatched.",
+      hint: "Inspect gkit operations and the journal lock before retrying.",
+      outcome: "not_dispatched",
+      meta: contextMeta(context),
+    });
+  }
   if (error instanceof GkitFailure) {
     if (error.meta) return error;
     return new GkitFailure({
@@ -427,20 +498,4 @@ function normalizeExecutionError(error: unknown, context: ExecutionContext): Gki
     message: "gkit encountered an internal Google Ads error.",
     meta: contextMeta(context),
   });
-}
-
-function sha256CanonicalJson(value: unknown): string {
-  return createHash("sha256")
-    .update(JSON.stringify(canonicalValue(value)))
-    .digest("hex");
-}
-
-function canonicalValue(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonicalValue);
-  if (value === null || typeof value !== "object") return value;
-  return Object.fromEntries(
-    Object.entries(value as Record<string, unknown>)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, child]) => [key, canonicalValue(child)]),
-  );
 }

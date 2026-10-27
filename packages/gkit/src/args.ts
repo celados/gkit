@@ -8,13 +8,15 @@ export type ParsedCommand =
   | { kind: "skill"; path: string | null }
   | { kind: "describe"; id: string }
   | { kind: "docs"; provider: string | null }
-  | { kind: "ledger-status" }
+  | { kind: "operations-list"; limit: number }
+  | { kind: "operations-show"; operationId: string }
   | {
-      kind: "ledger-reconcile";
-      attemptId: string;
-      outcome: "confirmed_charged" | "confirmed_not_charged";
-      evidenceRef: string;
+      kind: "operations-reconcile";
+      operationId: string;
+      providerResult: "succeeded" | "failed" | "not_dispatched" | null;
+      spendOutcome: "confirmed_charged" | "confirmed_not_charged" | null;
       costUsd: string | null;
+      evidenceRef: string;
       providerRequestId: string | null;
     }
   | { kind: "dataforseo-doctor"; profileFlag: string | null }
@@ -26,7 +28,7 @@ export type ParsedCommand =
   | {
       kind: "dataforseo-call";
       profileFlag: string | null;
-      operationId: string;
+      capabilityId: string;
       input: string;
       allowSpend: boolean;
       maxSpendUsd: string | null;
@@ -37,7 +39,7 @@ export type ParsedCommand =
   | {
       kind: "bing-call";
       profileFlag: string | null;
-      operationId: string;
+      capabilityId: string;
       input: string;
       out: string | null;
       force: boolean;
@@ -46,7 +48,7 @@ export type ParsedCommand =
   | {
       kind: "google-ads-call";
       profileFlag: string | null;
-      operationId: string;
+      capabilityId: string;
       input: string;
       out: string | null;
       force: boolean;
@@ -55,7 +57,7 @@ export type ParsedCommand =
   | {
       kind: "gsc-call";
       profileFlag: string | null;
-      operationId: string;
+      capabilityId: string;
       input: string;
       allowWrite: boolean;
       out: string | null;
@@ -65,7 +67,7 @@ export type ParsedCommand =
   | {
       kind: "posthog-call";
       profileFlag: string | null;
-      operationId: string;
+      capabilityId: string;
       input: string;
       out: string | null;
       force: boolean;
@@ -74,7 +76,7 @@ export type ParsedCommand =
   | {
       kind: "hubspot-call";
       profileFlag: string | null;
-      operationId: string;
+      capabilityId: string;
       input: string;
       out: string | null;
       force: boolean;
@@ -204,31 +206,57 @@ export function parseArgs(argv: string[]): ParsedCommand {
 
   if (rest[0] === "site") return parseSiteArgs(rest.slice(1), profileFlag);
 
-  if (rest[0] === "ledger") {
-    if (profileFlag) invalid("ledger commands do not load a profile.");
-    if (rest.length === 1) return { kind: "ledger-status" };
-    if (rest[1] === "status" && rest.length === 2) {
-      return { kind: "ledger-status" };
+  if (rest[0] === "operations") {
+    if (profileFlag) invalid("operations commands do not load a profile.");
+    if (rest.length === 1 || rest[1] === "list") {
+      const flags = parseFlags(rest.slice(rest[1] === "list" ? 2 : 1), new Set());
+      requireOnly(flags, ["--limit"]);
+      const limitText = optionalString(flags, "--limit") ?? "20";
+      if (!/^[1-9]\d{0,3}$/.test(limitText)) invalid("--limit must be an integer from 1 to 9999.");
+      return { kind: "operations-list", limit: Number(limitText) };
     }
-    if (rest[1] !== "reconcile") invalid(`Unknown ledger command: ${rest[1]}`);
+    if (rest[1] === "show") {
+      const flags = parseFlags(rest.slice(2), new Set());
+      requireOnly(flags, ["--id"]);
+      return { kind: "operations-show", operationId: requiredString(flags, "--id") };
+    }
+    if (rest[1] !== "reconcile") invalid(`Unknown operations command: ${rest[1]}`);
     const flags = parseFlags(rest.slice(2), new Set());
     requireOnly(flags, [
-      "--attempt",
-      "--outcome",
+      "--id",
+      "--result",
+      "--spend-outcome",
       "--evidence-ref",
       "--cost-usd",
       "--provider-request-id",
     ]);
-    const outcome = requiredString(flags, "--outcome");
-    if (outcome !== "confirmed_charged" && outcome !== "confirmed_not_charged") {
-      invalid("--outcome must be confirmed_charged or confirmed_not_charged.");
+    const providerResult = optionalString(flags, "--result");
+    if (
+      providerResult !== null &&
+      providerResult !== "succeeded" &&
+      providerResult !== "failed" &&
+      providerResult !== "not_dispatched"
+    ) {
+      invalid("--result must be succeeded, failed, or not_dispatched.");
+    }
+    const spendOutcome = optionalString(flags, "--spend-outcome");
+    if (
+      spendOutcome !== null &&
+      spendOutcome !== "confirmed_charged" &&
+      spendOutcome !== "confirmed_not_charged"
+    ) {
+      invalid("--spend-outcome must be confirmed_charged or confirmed_not_charged.");
+    }
+    if (providerResult === null && spendOutcome === null) {
+      invalid("operations reconcile requires --result, --spend-outcome, or both.");
     }
     return {
-      kind: "ledger-reconcile",
-      attemptId: requiredString(flags, "--attempt"),
-      outcome,
-      evidenceRef: requiredString(flags, "--evidence-ref"),
+      kind: "operations-reconcile",
+      operationId: requiredString(flags, "--id"),
+      providerResult,
+      spendOutcome,
       costUsd: optionalString(flags, "--cost-usd"),
+      evidenceRef: requiredString(flags, "--evidence-ref"),
       providerRequestId: optionalString(flags, "--provider-request-id"),
     };
   }
@@ -269,7 +297,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
   const flags = parseFlags(rest.slice(3), booleanNames);
   if (provider === "gsc") {
     requireOnly(flags, [
-      "--operation-id",
+      "--capability-id",
       "--input",
       "--allow-write",
       "--out",
@@ -279,7 +307,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
     return {
       kind: "gsc-call",
       profileFlag,
-      operationId: requiredString(flags, "--operation-id"),
+      capabilityId: requiredString(flags, "--capability-id"),
       input: requiredString(flags, "--input"),
       allowWrite: flags.get("--allow-write") === true,
       out: optionalString(flags, "--out"),
@@ -288,7 +316,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
     };
   }
   if (provider !== "dataforseo") {
-    requireOnly(flags, ["--operation-id", "--input", "--out", "--force", "--dry-run"]);
+    requireOnly(flags, ["--capability-id", "--input", "--out", "--force", "--dry-run"]);
     return {
       kind:
         provider === "posthog"
@@ -299,7 +327,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
             ? "google-ads-call"
             : "bing-call",
       profileFlag,
-      operationId: requiredString(flags, "--operation-id"),
+      capabilityId: requiredString(flags, "--capability-id"),
       input: requiredString(flags, "--input"),
       out: optionalString(flags, "--out"),
       force: flags.get("--force") === true,
@@ -307,7 +335,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
     };
   }
   requireOnly(flags, [
-    "--operation-id",
+    "--capability-id",
     "--input",
     "--allow-spend",
     "--max-spend-usd",
@@ -318,7 +346,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
   return {
     kind: "dataforseo-call",
     profileFlag,
-    operationId: requiredString(flags, "--operation-id"),
+    capabilityId: requiredString(flags, "--capability-id"),
     input: requiredString(flags, "--input"),
     allowSpend: flags.get("--allow-spend") === true,
     maxSpendUsd: optionalString(flags, "--max-spend-usd"),
@@ -340,35 +368,35 @@ export function renderHelp(): string {
     "",
     "DataForSEO:",
     "  gkit --profile <app> dataforseo doctor",
-    "  gkit --profile <app> dataforseo api call --operation-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run",
-    "  gkit --profile <app> dataforseo api call --operation-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path>",
+    "  gkit --profile <app> dataforseo api call --capability-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run",
+    "  gkit --profile <app> dataforseo api call --capability-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path>",
     "  Default artifact behavior is no-replace; add --force only after reviewing the destination.",
     "",
     "Bing Webmaster:",
     "  gkit --profile <app> bing doctor",
-    "  gkit --profile <app> bing api call --operation-id <id> --input @request.json --out <path> --dry-run",
-    "  gkit --profile <app> bing api call --operation-id <id> --input @request.json --out <path>",
+    "  gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path> --dry-run",
+    "  gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path>",
     "",
     "PostHog:",
     "  gkit --profile <app> posthog doctor",
-    "  gkit --profile <app> posthog api call --operation-id posthog.query.run --input @request.json --out <path> --dry-run",
-    "  gkit --profile <app> posthog api call --operation-id posthog.query.run --input @request.json --out <path>",
+    "  gkit --profile <app> posthog api call --capability-id posthog.query.run --input @request.json --out <path> --dry-run",
+    "  gkit --profile <app> posthog api call --capability-id posthog.query.run --input @request.json --out <path>",
     "",
     "Google Ads:",
     "  gkit --profile <app> google-ads doctor",
-    "  gkit --profile <app> google-ads api call --operation-id <id> --input @request.json --out <path> --dry-run",
-    "  gkit --profile <app> google-ads api call --operation-id <id> --input @request.json --out <path>",
+    "  gkit --profile <app> google-ads api call --capability-id <id> --input @request.json --out <path> --dry-run",
+    "  gkit --profile <app> google-ads api call --capability-id <id> --input @request.json --out <path>",
     "",
     "Google Search Console:",
     "  gkit --profile <app> gsc doctor",
-    "  gkit --profile <app> gsc api call --operation-id <id> --input @request.json --out <path> --dry-run",
-    "  gkit --profile <app> gsc api call --operation-id <id> --input @request.json --out <path>",
+    "  gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path> --dry-run",
+    "  gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path>",
     "  Write capabilities (gsc.sitemaps.submit) also require --allow-write, including --dry-run.",
     "",
     "HubSpot:",
     "  gkit --profile <app> hubspot doctor",
-    "  gkit --profile <app> hubspot api call --operation-id <id> --input @request.json --out <path> --dry-run",
-    "  gkit --profile <app> hubspot api call --operation-id <id> --input @request.json --out <path>",
+    "  gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path> --dry-run",
+    "  gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path>",
     "",
     "Site facts:",
     "  gkit --schema site",
@@ -379,9 +407,10 @@ export function renderHelp(): string {
     "  gkit site diff <snapshot-a> <snapshot-b> [--out <file>]",
     "  gkit --profile <app> site explain <snapshot-a> <snapshot-b> --model <id> --out <file>",
     "",
-    "Spend ledger:",
-    "  gkit ledger",
-    "  gkit ledger reconcile --attempt <id> --outcome <outcome> --evidence-ref <ref> [--cost-usd <decimal>]",
+    "Operation journal:",
+    "  gkit operations [list] [--limit <n>]",
+    "  gkit operations show --id <operation-id>",
+    "  gkit operations reconcile --id <operation-id> [--result <result>] [--spend-outcome <outcome> [--cost-usd <decimal>]] --evidence-ref <ref>",
     "",
   ].join("\n");
 }

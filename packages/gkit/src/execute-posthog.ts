@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { Buffer } from "node:buffer";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -10,6 +10,7 @@ import {
   type ArtifactReservation,
 } from "./artifact";
 import type { ParsedCommand } from "./args";
+import { sha256CanonicalJson } from "./canonical";
 import {
   type Envelope,
   type EnvelopeMeta,
@@ -18,6 +19,13 @@ import {
   toFailureEnvelope,
 } from "./envelope";
 import type { ExecuteResult } from "./execute";
+import { defaultJournalPath, JournalError } from "./journal";
+import {
+  defaultJournalPort,
+  providerResultOf,
+  startCostFreeOperation,
+  type JournalPort,
+} from "./operation-recorder";
 import {
   getManifestRecord,
   ManifestError,
@@ -57,6 +65,8 @@ export type PostHogExecuteDependencies = {
       timeoutMs?: number;
     }) => Promise<PostHogDispatchResult>;
   }>;
+  journal: JournalPort;
+  randomOperationId: () => string;
 };
 
 const defaultDependencies: PostHogExecuteDependencies = {
@@ -65,12 +75,15 @@ const defaultDependencies: PostHogExecuteDependencies = {
   resolveProviderSecrets,
   reserveArtifactDestination,
   loadPostHogAdapter: async () => await import("./providers/posthog"),
+  journal: defaultJournalPort,
+  randomOperationId: randomUUID,
 };
 
 type ExecutionContext = {
   profile: string | null;
   capability: string | null;
   effects: string[];
+  operationId: string | null;
   providerRequestId: string | null;
   artifact: ArtifactReceipt | null;
 };
@@ -81,11 +94,10 @@ function contextMeta(context: ExecutionContext): EnvelopeMeta {
     provider: "posthog",
     capability: context.capability,
     effects: context.effects,
-    cost: null,
+    operationId: context.operationId,
     artifact: context.artifact,
-    attemptId: null,
-    spendOutcome: null,
     providerRequestId: context.providerRequestId,
+    spend: null,
   };
 }
 
@@ -96,6 +108,7 @@ export async function executePostHogCall(options: {
   env?: Readonly<Record<string, string | undefined>>;
   xdgConfigHome?: string;
   home?: string;
+  journalPath?: string;
   dependencies?: Partial<PostHogExecuteDependencies>;
 }): Promise<ExecuteResult> {
   const dependencies = { ...defaultDependencies, ...options.dependencies };
@@ -104,6 +117,7 @@ export async function executePostHogCall(options: {
     profile: null,
     capability: null,
     effects: [],
+    operationId: null,
     providerRequestId: null,
     artifact: null,
   };
@@ -113,7 +127,7 @@ export async function executePostHogCall(options: {
 
   try {
     throwIfCancelled(options.signal);
-    const record = getManifestRecord(options.manifest, options.command.operationId);
+    const record = getManifestRecord(options.manifest, options.command.capabilityId);
     context.capability = record.id;
     context.effects = [...record.effects];
     if (record.provider !== "posthog" || record.adapterKey !== "query.run") {
@@ -207,10 +221,35 @@ export async function executePostHogCall(options: {
     secrets.register(apiToken);
     throwIfCancelled(options.signal);
 
+    let adapter: Awaited<ReturnType<PostHogExecuteDependencies["loadPostHogAdapter"]>>;
+    try {
+      adapter = await dependencies.loadPostHogAdapter();
+    } catch {
+      throw new GkitFailure({
+        code: "INTERNAL_ERROR",
+        message: "The reviewed PostHog adapter could not be loaded.",
+        outcome: "not_dispatched",
+        meta: contextMeta(context),
+      });
+    }
+    throwIfCancelled(options.signal);
+    const journaled = await startCostFreeOperation({
+      journal: dependencies.journal,
+      journalPath: options.journalPath ?? defaultJournalPath(env),
+      attempt: {
+        operationId: dependencies.randomOperationId(),
+        profile: profile.name,
+        provider: "posthog",
+        capability: record.id,
+        capabilityRevision: record.revision,
+        effects: record.effects,
+        inputSha256: sha256CanonicalJson(input),
+      },
+    });
+    context.operationId = journaled.operationId;
+
     let providerResult: PostHogDispatchResult;
     try {
-      const adapter = await dependencies.loadPostHogAdapter();
-      throwIfCancelled(options.signal);
       dispatched = true;
       providerResult = await adapter.dispatchPostHog({
         input: queryInput,
@@ -218,16 +257,13 @@ export async function executePostHogCall(options: {
         credentials: Object.freeze({ apiToken }),
         signal: options.signal,
       });
-    } catch (error) {
-      if (error instanceof GkitFailure) throw error;
+    } catch {
       providerResult = {
         ok: false,
-        code: dispatched ? "UNKNOWN_OUTCOME" : "INTERNAL_ERROR",
-        message: dispatched
-          ? "The dispatched PostHog query ended without a confirmed outcome."
-          : "The reviewed PostHog adapter could not be loaded.",
+        code: "UNKNOWN_OUTCOME",
+        message: "The dispatched PostHog query ended without a confirmed outcome.",
         retryable: false,
-        outcome: dispatched ? "unknown" : "not_dispatched",
+        outcome: "unknown",
         details: null,
         rawBytes: null,
         providerRequestId: null,
@@ -235,6 +271,16 @@ export async function executePostHogCall(options: {
     }
 
     context.providerRequestId = safeRequestId(providerResult.providerRequestId, secrets);
+    let journalFailure = false;
+    try {
+      await journaled.settle({
+        providerResult: providerResultOf(providerResult),
+        errorCode: providerResult.ok ? null : providerResult.code,
+        providerRequestId: context.providerRequestId,
+      });
+    } catch {
+      journalFailure = true;
+    }
     let artifactError: ArtifactError | null = null;
     if (providerResult.rawBytes) {
       try {
@@ -253,7 +299,23 @@ export async function executePostHogCall(options: {
       artifactError ??= normalizeArtifactError(error);
       reservation = null;
     }
+    if (context.artifact && !journalFailure) {
+      try {
+        await journaled.recordArtifact(context.artifact);
+      } catch {
+        journalFailure = true;
+      }
+    }
 
+    if (journalFailure) {
+      throw new GkitFailure({
+        code: "LOCAL_IO_ERROR",
+        message: "The PostHog response completed, but the operation journal could not record it.",
+        hint: "Inspect gkit operations and the journal lock before repeating the query.",
+        outcome: providerResult.ok ? "confirmed" : providerResult.outcome,
+        meta: contextMeta(context),
+      });
+    }
     if (artifactError) {
       throw new GkitFailure({
         code: "LOCAL_IO_ERROR",
@@ -375,6 +437,15 @@ function normalizeArtifactError(error: unknown): ArtifactError {
 }
 
 function normalizeExecutionError(error: unknown, context: ExecutionContext): GkitFailure {
+  if (error instanceof JournalError) {
+    return new GkitFailure({
+      code: "LOCAL_IO_ERROR",
+      message: "The operation journal could not record the provider attempt, so it was not dispatched.",
+      hint: "Inspect gkit operations and the journal lock before retrying.",
+      outcome: "not_dispatched",
+      meta: contextMeta(context),
+    });
+  }
   if (error instanceof GkitFailure) {
     if (error.meta) return error;
     return new GkitFailure({
@@ -417,21 +488,4 @@ function normalizeExecutionError(error: unknown, context: ExecutionContext): Gki
     message: "gkit encountered an internal error.",
     meta: contextMeta(context),
   });
-}
-
-function sha256CanonicalJson(value: unknown): string {
-  return createHash("sha256")
-    .update(JSON.stringify(canonicalValue(value)))
-    .digest("hex");
-}
-
-function canonicalValue(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonicalValue);
-  if (value === null || typeof value !== "object") return value;
-  const result: Record<string, unknown> = {};
-  for (const key of Object.keys(value).sort()) {
-    const child = (value as Record<string, unknown>)[key];
-    if (child !== undefined) result[key] = canonicalValue(child);
-  }
-  return result;
 }

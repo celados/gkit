@@ -11,7 +11,7 @@ describe("gkit argv parser", () => {
         "dataforseo",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "dataforseo.backlinks.bulk_ranks.live",
         "--input",
         "@req.json",
@@ -24,7 +24,7 @@ describe("gkit argv parser", () => {
     ).toEqual({
       kind: "dataforseo-call",
       profileFlag: "app-a",
-      operationId: "dataforseo.backlinks.bulk_ranks.live",
+      capabilityId: "dataforseo.backlinks.bulk_ranks.live",
       input: "@req.json",
       allowSpend: true,
       maxSpendUsd: "0.05",
@@ -48,8 +48,15 @@ describe("gkit argv parser", () => {
     expect(() => parseArgs(["--profile", "app-a", "@skill"])).toThrow(
       "@skill does not load a profile",
     );
-    expect(parseArgs(["ledger"])).toEqual({ kind: "ledger-status" });
-    expect(parseArgs(["ledger", "status"])).toEqual({ kind: "ledger-status" });
+    expect(parseArgs(["operations"])).toEqual({ kind: "operations-list", limit: 20 });
+    expect(parseArgs(["operations", "list", "--limit", "5"])).toEqual({
+      kind: "operations-list",
+      limit: 5,
+    });
+    expect(parseArgs(["operations", "show", "--id", "op-1"])).toEqual({
+      kind: "operations-show",
+      operationId: "op-1",
+    });
   });
 
   it("accepts the read-only PostHog command without spend flags", () => {
@@ -60,7 +67,7 @@ describe("gkit argv parser", () => {
         "posthog",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "posthog.query.run",
         "--input",
         "@req.json",
@@ -71,7 +78,7 @@ describe("gkit argv parser", () => {
     ).toEqual({
       kind: "posthog-call",
       profileFlag: "app-a",
-      operationId: "posthog.query.run",
+      capabilityId: "posthog.query.run",
       input: "@req.json",
       out: "result.json",
       force: false,
@@ -82,7 +89,7 @@ describe("gkit argv parser", () => {
         "posthog",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "posthog.query.run",
         "--input",
         "@req.json",
@@ -99,7 +106,7 @@ describe("gkit argv parser", () => {
         "google-ads",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "google-ads.query.gaql",
         "--input",
         "@gaql.json",
@@ -110,7 +117,7 @@ describe("gkit argv parser", () => {
     ).toEqual({
       kind: "google-ads-call",
       profileFlag: "openclaw-web",
-      operationId: "google-ads.query.gaql",
+      capabilityId: "google-ads.query.gaql",
       input: "@gaql.json",
       out: "pages.json",
       force: false,
@@ -121,7 +128,7 @@ describe("gkit argv parser", () => {
         "google-ads",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "google-ads.query.gaql",
         "--input",
         "{}",
@@ -137,7 +144,7 @@ describe("gkit argv parser", () => {
     ["hubspot", "hubspot.crm.objects.list", "hubspot-call"],
   ] as const)(
     "accepts the read-only %s call without spend flags",
-    (provider, operationId, kind) => {
+    (provider, capabilityId, kind) => {
       expect(
         parseArgs([
           "--profile",
@@ -145,8 +152,8 @@ describe("gkit argv parser", () => {
           provider,
           "api",
           "call",
-          "--operation-id",
-          operationId,
+          "--capability-id",
+          capabilityId,
           "--input",
           "{}",
           "--out",
@@ -156,7 +163,7 @@ describe("gkit argv parser", () => {
       ).toEqual({
         kind,
         profileFlag: "app-a",
-        operationId,
+        capabilityId,
         input: "{}",
         ...(provider === "gsc" ? { allowWrite: false } : {}),
         out: "result.json",
@@ -174,7 +181,7 @@ describe("gkit argv parser", () => {
         "gsc",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "gsc.sitemaps.submit",
         "--input",
         "{}",
@@ -182,9 +189,9 @@ describe("gkit argv parser", () => {
         "--out",
         "receipt.json",
       ]),
-    ).toMatchObject({ kind: "gsc-call", operationId: "gsc.sitemaps.submit", allowWrite: true });
+    ).toMatchObject({ kind: "gsc-call", capabilityId: "gsc.sitemaps.submit", allowWrite: true });
     expect(() =>
-      parseArgs(["gsc", "api", "call", "--operation-id", "x", "--input", "{}", "--allow-write=yes"]),
+      parseArgs(["gsc", "api", "call", "--capability-id", "x", "--input", "{}", "--allow-write=yes"]),
     ).toThrow("does not accept a value");
   });
 
@@ -192,7 +199,7 @@ describe("gkit argv parser", () => {
     "rejects --allow-write for %s, which has no write capabilities",
     (provider) => {
       expect(() =>
-        parseArgs([provider, "api", "call", "--operation-id", "x", "--input", "{}", "--allow-write"]),
+        parseArgs([provider, "api", "call", "--capability-id", "x", "--input", "{}", "--allow-write"]),
       ).toThrow("Unknown flag: --allow-write");
     },
   );
@@ -203,9 +210,9 @@ describe("gkit argv parser", () => {
         "dataforseo",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "id",
-        "--operation-id",
+        "--capability-id",
         "id-2",
         "--input",
         "@req.json",
@@ -216,7 +223,7 @@ describe("gkit argv parser", () => {
         "dataforseo",
         "api",
         "call",
-        "--operation-id",
+        "--capability-id",
         "id",
         "--input",
         "@req.json",

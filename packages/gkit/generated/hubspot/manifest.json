@@ -70,7 +70,7 @@
             "toObjectType": "companies",
             "limit": 100
           },
-          "command": "gkit --profile app-a hubspot api call --operation-id hubspot.crm.associations.list --input @request.json --out hubspot-associations.json --dry-run"
+          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.associations.list --input @request.json --out hubspot-associations.json --dry-run"
         }
       ]
     },
@@ -173,7 +173,7 @@
             ],
             "limit": 100
           },
-          "command": "gkit --profile app-a hubspot api call --operation-id hubspot.crm.objects.list --input @request.json --out hubspot-contacts.json --dry-run"
+          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.objects.list --input @request.json --out hubspot-contacts.json --dry-run"
         }
       ]
     },
@@ -268,7 +268,7 @@
             ],
             "limit": 200
           },
-          "command": "gkit --profile app-a hubspot api call --operation-id hubspot.crm.objects.search --input @request.json --out hubspot-contact-search.json --dry-run"
+          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.objects.search --input @request.json --out hubspot-contact-search.json --dry-run"
         }
       ]
     },
@@ -310,7 +310,7 @@
           "input": {
             "limit": 100
           },
-          "command": "gkit --profile app-a hubspot api call --operation-id hubspot.crm.owners.list --input '{\"limit\":100}' --out hubspot-owners.json --dry-run"
+          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.owners.list --input '{\"limit\":100}' --out hubspot-owners.json --dry-run"
         }
       ]
     },
@@ -345,7 +345,7 @@
           "input": {
             "objectType": "deals"
           },
-          "command": "gkit --profile app-a hubspot api call --operation-id hubspot.crm.pipelines.list --input '{\"objectType\":\"deals\"}' --out hubspot-deal-pipelines.json --dry-run"
+          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.pipelines.list --input '{\"objectType\":\"deals\"}' --out hubspot-deal-pipelines.json --dry-run"
         }
       ]
     },
@@ -382,7 +382,7 @@
           "input": {
             "objectType": "contacts"
           },
-          "command": "gkit --profile app-a hubspot api call --operation-id hubspot.crm.properties.list --input '{\"objectType\":\"contacts\"}' --out hubspot-contact-properties.json --dry-run"
+          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.properties.list --input '{\"objectType\":\"contacts\"}' --out hubspot-contact-properties.json --dry-run"
         }
       ]
     },
@@ -481,7 +481,7 @@
             ],
             "limit": 100
           },
-          "command": "gkit --profile app-a hubspot api call --operation-id hubspot.events.occurrences.list --input @request.json --out hubspot-events.json --dry-run"
+          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.events.occurrences.list --input @request.json --out hubspot-events.json --dry-run"
         }
       ]
     }

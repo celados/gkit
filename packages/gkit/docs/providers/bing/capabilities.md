@@ -42,7 +42,7 @@ Read current crawl issue URLs for one site.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.crawl.issues --input '{}' --out bing-crawl-issues.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.crawl.issues --input '{}' --out bing-crawl-issues.json --dry-run
 ```
 
 ## bing.crawl.settings
@@ -74,7 +74,7 @@ Read crawl settings for one site without exposing mutation methods.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.crawl.settings --input '{}' --out bing-crawl-settings.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.crawl.settings --input '{}' --out bing-crawl-settings.json --dry-run
 ```
 
 ## bing.crawl.stats
@@ -106,7 +106,7 @@ Read crawl statistics for one site.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.crawl.stats --input '{}' --out bing-crawl-stats.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.crawl.stats --input '{}' --out bing-crawl-stats.json --dry-run
 ```
 
 ## bing.links.pages
@@ -143,7 +143,7 @@ Read one provider page of URLs and inbound link counts.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.links.pages --input '{"page":0}' --out bing-links.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.links.pages --input '{"page":0}' --out bing-links.json --dry-run
 ```
 
 ## bing.links.url
@@ -188,7 +188,7 @@ Read one provider page of inbound link details for an exact URL.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.links.url --input @request.json --out bing-url-links.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.links.url --input @request.json --out bing-url-links.json --dry-run
 ```
 
 ## bing.sitemaps.get
@@ -228,7 +228,7 @@ Read details for one exact sitemap or feed URL.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.sitemaps.get --input @request.json --out bing-sitemap.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.sitemaps.get --input @request.json --out bing-sitemap.json --dry-run
 ```
 
 ## bing.sitemaps.list
@@ -260,7 +260,7 @@ List top-level feeds or sitemaps for one site.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.sitemaps.list --input '{}' --out bing-sitemaps.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.sitemaps.list --input '{}' --out bing-sitemaps.json --dry-run
 ```
 
 ## bing.sites.list
@@ -286,7 +286,7 @@ List every site accessible to the profile-bound Bing Webmaster API key.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.sites.list --input '{}' --out bing-sites.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.sites.list --input '{}' --out bing-sites.json --dry-run
 ```
 
 ## bing.traffic.page-queries
@@ -326,7 +326,7 @@ Read query statistics for one exact page URL.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.traffic.page-queries --input @request.json --out bing-page-queries.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.traffic.page-queries --input @request.json --out bing-page-queries.json --dry-run
 ```
 
 ## bing.traffic.pages
@@ -358,7 +358,7 @@ Read top page traffic statistics for one site.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.traffic.pages --input '{}' --out bing-pages.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.traffic.pages --input '{}' --out bing-pages.json --dry-run
 ```
 
 ## bing.traffic.queries
@@ -390,7 +390,7 @@ Read top query traffic statistics for one site.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.traffic.queries --input '{}' --out bing-queries.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.traffic.queries --input '{}' --out bing-queries.json --dry-run
 ```
 
 ## bing.traffic.query
@@ -430,7 +430,7 @@ Read daily traffic statistics for one exact query.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.traffic.query --input @request.json --out bing-query.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.traffic.query --input @request.json --out bing-query.json --dry-run
 ```
 
 ## bing.traffic.query-page
@@ -476,7 +476,7 @@ Read detailed statistics for one exact query and page URL pair.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.traffic.query-page --input @request.json --out bing-query-page.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.traffic.query-page --input @request.json --out bing-query-page.json --dry-run
 ```
 
 ## bing.traffic.query-pages
@@ -516,7 +516,7 @@ Read page statistics for one exact query.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.traffic.query-pages --input @request.json --out bing-query-pages.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.traffic.query-pages --input @request.json --out bing-query-pages.json --dry-run
 ```
 
 ## bing.traffic.rank
@@ -548,7 +548,7 @@ Read rank and traffic statistics for the profile-bound or explicitly selected si
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.traffic.rank --input '{}' --out bing-rank.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.traffic.rank --input '{}' --out bing-rank.json --dry-run
 ```
 
 ## bing.urls.info
@@ -588,7 +588,7 @@ Read Bing index information for one URL or domain target.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.urls.info --input @request.json --out bing-url-info.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.urls.info --input @request.json --out bing-url-info.json --dry-run
 ```
 
 ## bing.urls.traffic
@@ -628,5 +628,5 @@ Read Bing traffic information for one URL or domain target.
 ### Invocation
 
 ```bash
-gkit --profile <app> bing api call --operation-id bing.urls.traffic --input @request.json --out bing-url-traffic.json --dry-run
+gkit --profile <app> bing api call --capability-id bing.urls.traffic --input @request.json --out bing-url-traffic.json --dry-run
 ```

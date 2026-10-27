@@ -31,6 +31,7 @@ export async function executeHubSpotCall(options: {
   env?: Readonly<Record<string, string | undefined>>;
   xdgConfigHome?: string;
   home?: string;
+  journalPath?: string;
   fetch?: HubSpotFetch;
 }) {
   return await executeReadProviderCall<HubSpotConfig, HubSpotOperation, HubSpotCredentials>({

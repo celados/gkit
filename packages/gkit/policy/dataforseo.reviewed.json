@@ -56,7 +56,7 @@
               "rank_scale": "one_hundred",
               "tag": "slice2-smoke"
             },
-            "command": "gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.bulk_ranks.live --input @req.json --allow-spend --max-spend-usd 0.024072 --out ranks.json --dry-run"
+            "command": "gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.bulk_ranks.live --input @req.json --allow-spend --max-spend-usd 0.024072 --out ranks.json --dry-run"
           },
           {
             "title": "Live call after reviewing the dry-run",
@@ -65,7 +65,7 @@
               "rank_scale": "one_hundred",
               "tag": "slice2-smoke"
             },
-            "command": "gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.bulk_ranks.live --input @req.json --allow-spend --max-spend-usd 0.024072 --out ranks.json"
+            "command": "gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.bulk_ranks.live --input @req.json --allow-spend --max-spend-usd 0.024072 --out ranks.json"
           }
         ]
       }
@@ -111,7 +111,7 @@
               "include_subdomains": true,
               "backlinks_status_type": "live"
             },
-            "command": "gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.summary.live --input @req.json --allow-spend --max-spend-usd 0.024036 --out summary.json --dry-run"
+            "command": "gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.summary.live --input @req.json --allow-spend --max-spend-usd 0.024036 --out summary.json --dry-run"
           },
           {
             "title": "Live call after reviewing the dry-run",
@@ -120,7 +120,7 @@
               "include_subdomains": true,
               "backlinks_status_type": "live"
             },
-            "command": "gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.summary.live --input @req.json --allow-spend --max-spend-usd 0.024036 --out summary.json"
+            "command": "gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.summary.live --input @req.json --allow-spend --max-spend-usd 0.024036 --out summary.json"
           }
         ]
       }
@@ -182,7 +182,7 @@
               "order_by": ["rank,desc"],
               "exclude_internal_backlinks": true
             },
-            "command": "gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.referring_domains.live --input @req.json --allow-spend --max-spend-usd 0.024720 --out referring-domains.json --dry-run"
+            "command": "gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.referring_domains.live --input @req.json --allow-spend --max-spend-usd 0.024720 --out referring-domains.json --dry-run"
           },
           {
             "title": "Live call after reviewing the dry-run",
@@ -192,7 +192,7 @@
               "order_by": ["rank,desc"],
               "exclude_internal_backlinks": true
             },
-            "command": "gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.referring_domains.live --input @req.json --allow-spend --max-spend-usd 0.024720 --out referring-domains.json"
+            "command": "gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.referring_domains.live --input @req.json --allow-spend --max-spend-usd 0.024720 --out referring-domains.json"
           }
         ]
       }
@@ -255,7 +255,7 @@
               "os": "windows",
               "depth": 10
             },
-            "command": "gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.serp.google.organic.live.advanced --input @req.json --allow-spend --max-spend-usd 0.002000 --out serp.json --dry-run"
+            "command": "gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.serp.google.organic.live.advanced --input @req.json --allow-spend --max-spend-usd 0.002000 --out serp.json --dry-run"
           },
           {
             "title": "Live call after reviewing the dry-run",
@@ -267,7 +267,7 @@
               "os": "windows",
               "depth": 10
             },
-            "command": "gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.serp.google.organic.live.advanced --input @req.json --allow-spend --max-spend-usd 0.002000 --out serp.json"
+            "command": "gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.serp.google.organic.live.advanced --input @req.json --allow-spend --max-spend-usd 0.002000 --out serp.json"
           }
         ]
       }
@@ -350,7 +350,7 @@
               "limit": 20,
               "order_by": ["ai_search_volume,desc"]
             },
-            "command": "gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.ai_optimization.llm_mentions.search.live --input @req.json --allow-spend --max-spend-usd 0.150000 --out llm-mentions.json --dry-run"
+            "command": "gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.ai_optimization.llm_mentions.search.live --input @req.json --allow-spend --max-spend-usd 0.150000 --out llm-mentions.json --dry-run"
           },
           {
             "title": "Live call after reviewing the dry-run",
@@ -362,7 +362,7 @@
               "limit": 20,
               "order_by": ["ai_search_volume,desc"]
             },
-            "command": "gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.ai_optimization.llm_mentions.search.live --input @req.json --allow-spend --max-spend-usd 0.150000 --out llm-mentions.json"
+            "command": "gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.ai_optimization.llm_mentions.search.live --input @req.json --allow-spend --max-spend-usd 0.150000 --out llm-mentions.json"
           }
         ]
       }

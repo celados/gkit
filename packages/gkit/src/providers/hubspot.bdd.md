@@ -29,7 +29,7 @@ The executable behavior is tested through these existing public seams:
 1. Profile loading and `env:` secret resolution.
 2. Offline manifest discovery and capability describe.
 3. `gkit --profile <app> hubspot doctor`.
-4. `gkit --profile <app> hubspot api call --operation-id <id> --input <json> --out <path>`.
+4. `gkit --profile <app> hubspot api call --capability-id <id> --input <json> --out <path>`.
 5. The common response envelope and artifact receipt.
 
 ---

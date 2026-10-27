@@ -41,11 +41,10 @@ function doctorMeta(profile: string, provider = "dataforseo"): EnvelopeMeta {
     provider,
     capability: null,
     effects: [],
-    cost: null,
+    operationId: null,
     artifact: null,
-    attemptId: null,
-    spendOutcome: null,
     providerRequestId: null,
+    spend: null,
   };
 }
 

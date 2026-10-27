@@ -6,7 +6,7 @@ import { join } from "node:path";
 import type { ParsedCommand } from "./args";
 import { reserveArtifactDestination } from "./artifact";
 import { executeDataForSeoCall } from "./execute";
-import { authorizeIfUnblocked, LedgerError, readLedger } from "./ledger";
+import { JournalError, readJournal, recordArtifact, settleAttempt, startAttempt } from "./journal";
 import { compileExecutableManifest, loadExecutableManifest } from "./manifest";
 import { resolveProviderSecrets } from "./profile";
 import type { DataForSeoDispatchResult } from "./providers/dataforseo";
@@ -37,12 +37,12 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: {},
       dependencies: {
         resolveProviderSecrets: resolveSecrets,
         loadDataForSeoAdapter: loadAdapter,
-        authorizeIfUnblocked: authorize as never,
+        startAttempt: authorize as never,
       },
     });
 
@@ -50,8 +50,8 @@ describe("DataForSEO execution pipeline", () => {
       ok: false,
       error: { code: "EFFECT_NOT_ALLOWED", outcome: "not_dispatched" },
       meta: {
-        attemptId: null,
-        spendOutcome: null,
+        operationId: null,
+        spend: null,
         providerRequestId: null,
       },
     });
@@ -61,7 +61,7 @@ describe("DataForSEO execution pipeline", () => {
     expect(result.exitCode).toBe(1);
   });
 
-  it("prefers --profile and dry-runs after the gate without secrets, ledger writes, artifact locks, or adapters", async () => {
+  it("prefers --profile and dry-runs after the gate without secrets, journal writes, artifact locks, or adapters", async () => {
     const fixture = await createFixture();
     const resolveSecrets = vi.fn(resolveProviderSecrets);
     const loadAdapter = vi.fn(async () => adapter(successResult(24_072)));
@@ -73,12 +73,12 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: { GKIT_PROFILE: "other-app" },
       dependencies: {
         resolveProviderSecrets: resolveSecrets,
         loadDataForSeoAdapter: loadAdapter,
-        authorizeIfUnblocked: authorize as never,
+        startAttempt: authorize as never,
         reserveArtifactDestination: reserve as never,
       },
     });
@@ -111,11 +111,11 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: controller.signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
         reserveArtifactDestination: reserve as never,
-        authorizeIfUnblocked: authorize as never,
+        startAttempt: authorize as never,
         loadDataForSeoAdapter: loadAdapter as never,
       },
     });
@@ -123,7 +123,7 @@ describe("DataForSEO execution pipeline", () => {
     expect(result.envelope).toMatchObject({
       ok: false,
       error: { code: "CANCELLED", outcome: "not_dispatched" },
-      meta: { attemptId: null, spendOutcome: null },
+      meta: { operationId: null, spend: null },
     });
     expect(result.exitCode).toBe(130);
     expect(reserve).not.toHaveBeenCalled();
@@ -142,14 +142,14 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: controller.signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
         getSpendBlockers: async () => {
           controller.abort(new Error("SIGINT"));
           throw new Error("simulated interrupted lock wait");
         },
-        authorizeIfUnblocked: authorize as never,
+        startAttempt: authorize as never,
         loadDataForSeoAdapter: loadAdapter as never,
       },
     });
@@ -157,7 +157,7 @@ describe("DataForSEO execution pipeline", () => {
     expect(result.envelope).toMatchObject({
       ok: false,
       error: { code: "CANCELLED", outcome: "not_dispatched" },
-      meta: { attemptId: null, spendOutcome: null },
+      meta: { operationId: null, spend: null },
     });
     expect(result.exitCode).toBe(130);
     expect(authorize).not.toHaveBeenCalled();
@@ -173,7 +173,7 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: {},
       dependencies: { loadDataForSeoAdapter: loadAdapter },
     });
@@ -183,7 +183,7 @@ describe("DataForSEO execution pipeline", () => {
       error: { code: "PROFILE_ERROR", outcome: "not_dispatched" },
     });
     expect(loadAdapter).not.toHaveBeenCalled();
-    expect((await readLedger({ ledgerPath: fixture.ledgerPath })).events).toEqual([]);
+    expect((await readJournal({ journalPath: fixture.journalPath })).events).toEqual([]);
   });
 
   it("routes from the selected manifest adapter key and rejects an unavailable key before secrets", async () => {
@@ -205,7 +205,7 @@ describe("DataForSEO execution pipeline", () => {
       manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
         resolveProviderSecrets: resolveSecrets,
@@ -221,7 +221,7 @@ describe("DataForSEO execution pipeline", () => {
     expect(loadAdapter).not.toHaveBeenCalled();
   });
 
-  it("durably authorizes before dispatch, settles provider facts before publishing exact raw bytes", async () => {
+  it("durably starts the attempt before dispatch, settles provider facts before publishing exact raw bytes", async () => {
     const fixture = await createFixture();
     const events: string[] = [];
     const loadAdapter = vi.fn(async () => {
@@ -234,7 +234,7 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
         loadDataForSeoAdapter: loadAdapter,
@@ -250,34 +250,41 @@ describe("DataForSEO execution pipeline", () => {
             release: async () => await reservation.release(),
           };
         },
-        authorizeIfUnblocked: async (options) => {
-          const { authorizeIfUnblocked } = await import("./ledger");
-          const authorization = await authorizeIfUnblocked(options);
-          events.push("authorized");
-          return authorization;
+        startAttempt: async (options) => {
+          const started = await startAttempt(options);
+          events.push("started");
+          return started;
         },
-        appendSettled: async (options) => {
-          const { appendSettled } = await import("./ledger");
-          const settlement = await appendSettled(options);
+        settleAttempt: async (options) => {
+          const settlement = await settleAttempt(options);
           events.push("settled");
           return settlement;
+        },
+        recordArtifact: async (options) => {
+          const recorded = await recordArtifact(options);
+          events.push("artifact-recorded");
+          return recorded;
         },
       },
     });
 
     expect(events).toEqual([
-      "authorized",
+      "started",
       "adapter-loaded",
       "transport",
       "settled",
       "artifact-published",
+      "artifact-recorded",
     ]);
     expect(result.envelope).toMatchObject({
       ok: true,
       data: { itemsCount: 2, artifact: { bytes: 21 } },
       meta: {
-        cost: { amount: "0.024072", currency: "USD" },
-        spendOutcome: "confirmed_charged",
+        operationId: expect.any(String),
+        spend: {
+          outcome: "confirmed_charged",
+          cost: { amount: "0.024072", currency: "USD" },
+        },
         providerRequestId: providerTaskId,
       },
     });
@@ -285,13 +292,29 @@ describe("DataForSEO execution pipeline", () => {
       expect(result.envelope.meta.artifact?.path).toBe(await realpath(fixture.outPath));
     }
     expect(await readFile(fixture.outPath, "utf8")).toBe('{"provider":"result"}');
-    const ledger = await readLedger({ ledgerPath: fixture.ledgerPath });
-    expect(ledger.events.map((event) => event.type)).toEqual(["authorized", "settled"]);
-    expect(ledger.attempts[0]?.latestSettlement).toMatchObject({
-      outcome: "confirmed_charged",
-      costMicros: 24_072,
-      policyBreach: false,
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.events.map((event) => event.type)).toEqual([
+      "attempt_started",
+      "attempt_settled",
+      "artifact_recorded",
+    ]);
+    const operation = journal.operations[0];
+    expect(operation?.started).toMatchObject({
+      operationId: result.envelope.meta?.operationId,
+      provider: "dataforseo",
+      capability: "dataforseo.backlinks.bulk_ranks.live",
+      effects: ["read", "spend"],
+      spend: { maxCostMicros: 24_072, invocationMaxCostMicros: 50_000, currency: "USD" },
     });
+    expect(operation?.latestSettlement).toMatchObject({
+      providerResult: "succeeded",
+      errorCode: null,
+      providerRequestId: providerTaskId,
+      source: "automatic",
+      spend: { outcome: "confirmed_charged", costMicros: 24_072, policyBreach: false },
+    });
+    expect(operation?.artifact).toMatchObject({ bytes: 21, path: await realpath(fixture.outPath) });
+    expect(operation?.state).toBe("succeeded");
   });
 
   it("settles a policy breach, fails non-retryably, and quarantines that policy revision", async () => {
@@ -301,7 +324,7 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
         loadDataForSeoAdapter: async () => adapter(successResult(60_000)),
@@ -314,7 +337,7 @@ describe("DataForSEO execution pipeline", () => {
         retryable: false,
         outcome: "confirmed",
       },
-      meta: { spendOutcome: "confirmed_charged" },
+      meta: { spend: { outcome: "confirmed_charged", cost: { amount: "0.060000" } } },
     });
 
     const secondFixture = { ...fixture, outPath: join(fixture.root, "second.json") };
@@ -324,7 +347,7 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
         resolveProviderSecrets: resolveSecrets,
@@ -333,7 +356,10 @@ describe("DataForSEO execution pipeline", () => {
     });
     expect(second.envelope).toMatchObject({
       ok: false,
-      error: { code: "EFFECT_NOT_ALLOWED" },
+      error: {
+        code: "EFFECT_NOT_ALLOWED",
+        details: { blockers: [{ reason: "policy_breach", operationId: first.envelope.meta?.operationId }] },
+      },
     });
     expect(resolveSecrets).not.toHaveBeenCalled();
   });
@@ -345,7 +371,7 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
         loadDataForSeoAdapter: async () =>
@@ -364,12 +390,14 @@ describe("DataForSEO execution pipeline", () => {
         details: { artifactPublication: "failed" },
       },
       meta: {
-        spendOutcome: "confirmed_charged",
+        spend: { outcome: "confirmed_charged" },
         artifact: null,
       },
     });
-    const ledger = await readLedger({ ledgerPath: fixture.ledgerPath });
-    expect(ledger.attempts[0]?.latestSettlement?.policyBreach).toBe(true);
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.operations[0]?.latestSettlement?.spend?.policyBreach).toBe(true);
+    expect(journal.operations[0]?.artifact).toBeNull();
+    expect(journal.operations[0]?.state).toBe("failed");
     await expect(readFile(fixture.outPath, "utf8")).rejects.toThrow();
   });
 
@@ -392,15 +420,22 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: { loadDataForSeoAdapter: async () => adapter(unknown) },
     });
     expect(first.envelope).toMatchObject({
       ok: false,
       error: { code: "UNKNOWN_OUTCOME", retryable: false, outcome: "unknown" },
-      meta: { spendOutcome: "unknown" },
+      meta: { spend: { outcome: "unknown", cost: null } },
     });
+    const afterFirst = await readJournal({ journalPath: fixture.journalPath });
+    expect(afterFirst.operations[0]?.latestSettlement).toMatchObject({
+      providerResult: "unknown",
+      errorCode: "TIMEOUT",
+      spend: { outcome: "unknown", costMicros: null, policyBreach: false },
+    });
+    expect(afterFirst.operations[0]?.state).toBe("unknown");
 
     const next = { ...fixture, outPath: join(fixture.root, "next.json") };
     const resolveSecrets = vi.fn(resolveProviderSecrets);
@@ -409,13 +444,16 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: { resolveProviderSecrets: resolveSecrets },
     });
     expect(second.envelope).toMatchObject({
       ok: false,
-      error: { code: "EFFECT_NOT_ALLOWED" },
+      error: {
+        code: "EFFECT_NOT_ALLOWED",
+        details: { blockers: [{ reason: "unknown_outcome", operationId: first.envelope.meta?.operationId }] },
+      },
     });
     expect(resolveSecrets).not.toHaveBeenCalled();
   });
@@ -427,7 +465,7 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
         loadDataForSeoAdapter: async () =>
@@ -450,17 +488,16 @@ describe("DataForSEO execution pipeline", () => {
       ok: false,
       error: { code: "UNKNOWN_OUTCOME", outcome: "unknown" },
       meta: {
-        spendOutcome: "unknown",
+        spend: { outcome: "unknown", cost: { amount: "0.060000" } },
         providerRequestId: createdTaskId,
-        cost: { amount: "0.060000" },
       },
     });
-    const ledger = await readLedger({ ledgerPath: fixture.ledgerPath });
-    expect(ledger.attempts[0]?.latestSettlement).toMatchObject({
-      outcome: "unknown",
-      costMicros: 60_000,
-      policyBreach: true,
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.operations[0]?.latestSettlement).toMatchObject({
+      providerResult: "unknown",
+      spend: { outcome: "unknown", costMicros: 60_000, policyBreach: true },
     });
+    expect(journal.operations[0]?.state).toBe("unknown");
   });
 
   it("uses the conservative observed cost and unknown spend state when provider cost fields disagree", async () => {
@@ -470,7 +507,7 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
         loadDataForSeoAdapter: async () =>
@@ -497,15 +534,14 @@ describe("DataForSEO execution pipeline", () => {
         hint: expect.stringContaining("Reconcile"),
       },
       meta: {
-        cost: { amount: "1.024000" },
-        spendOutcome: "unknown",
+        spend: { outcome: "unknown", cost: { amount: "1.024000" } },
       },
     });
-    const ledger = await readLedger({ ledgerPath: fixture.ledgerPath });
-    expect(ledger.attempts[0]?.latestSettlement).toMatchObject({
-      outcome: "unknown",
-      costMicros: 1_024_000,
-      policyBreach: true,
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.operations[0]?.latestSettlement).toMatchObject({
+      providerResult: "failed",
+      errorCode: "PROVIDER_ERROR",
+      spend: { outcome: "unknown", costMicros: 1_024_000, policyBreach: true },
     });
   });
 
@@ -529,7 +565,7 @@ describe("DataForSEO execution pipeline", () => {
         manifest: fixture.manifest,
         signal: new AbortController().signal,
         xdgConfigHome: fixture.configHome,
-        ledgerPath: fixture.ledgerPath,
+        journalPath: fixture.journalPath,
         env: secretEnvironment(),
         dependencies: {
           loadDataForSeoAdapter: async () => adapter(providerResult),
@@ -540,11 +576,18 @@ describe("DataForSEO execution pipeline", () => {
         ok: false,
         error: { code, outcome: "confirmed", retryable: false },
         meta: {
-          attemptId: expect.any(String),
-          spendOutcome: "confirmed_not_charged",
+          operationId: expect.any(String),
+          spend: { outcome: "confirmed_not_charged", cost: { amount: "0.000000" } },
           providerRequestId: providerTaskId,
         },
       });
+      const journal = await readJournal({ journalPath: fixture.journalPath });
+      expect(journal.operations[0]?.latestSettlement).toMatchObject({
+        providerResult: "failed",
+        errorCode: code,
+        spend: { outcome: "confirmed_not_charged", costMicros: 0 },
+      });
+      expect(journal.operations[0]?.state).toBe("failed");
     }
   });
 
@@ -555,7 +598,7 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: {
         TEST_DATAFORSEO_LOGIN: "account@example.com",
         TEST_DATAFORSEO_PASSWORD: credentialShapedTaskId,
@@ -576,11 +619,11 @@ describe("DataForSEO execution pipeline", () => {
     expect(result.envelope).toMatchObject({
       ok: false,
       error: { code: "LOCAL_IO_ERROR", outcome: "confirmed" },
-      meta: { providerRequestId: null, spendOutcome: "confirmed_charged" },
+      meta: { providerRequestId: null, spend: { outcome: "confirmed_charged" } },
     });
-    expect(await readFile(fixture.ledgerPath, "utf8")).not.toContain(credentialShapedTaskId);
-    const ledger = await readLedger({ ledgerPath: fixture.ledgerPath });
-    expect(ledger.attempts[0]?.latestSettlement?.providerRequestId).toBeNull();
+    expect(await readFile(fixture.journalPath, "utf8")).not.toContain(credentialShapedTaskId);
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.operations[0]?.latestSettlement?.providerRequestId).toBeNull();
   });
 
   it("exits 130 when SIGINT arrives after durable settlement but before publication completes", async () => {
@@ -591,13 +634,12 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: controller.signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
         loadDataForSeoAdapter: async () => adapter(successResult(24_072)),
-        appendSettled: async (options) => {
-          const { appendSettled } = await import("./ledger");
-          const settlement = await appendSettled(options);
+        settleAttempt: async (options) => {
+          const settlement = await settleAttempt(options);
           controller.abort(new Error("SIGINT"));
           return settlement;
         },
@@ -607,6 +649,52 @@ describe("DataForSEO execution pipeline", () => {
     expect(result.envelope).toMatchObject({ ok: true });
     expect(result.exitCode).toBe(130);
     expect(await readFile(fixture.outPath, "utf8")).toBe('{"provider":"result"}');
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.operations[0]?.state).toBe("succeeded");
+  });
+
+  it("settles a cancellation after the durable start as not_dispatched and not charged", async () => {
+    const fixture = await createFixture();
+    const controller = new AbortController();
+    const loadAdapter = vi.fn(async () => adapter(successResult(24_072)));
+    const result = await executeDataForSeoCall({
+      command: callCommand(fixture),
+      manifest: fixture.manifest,
+      signal: controller.signal,
+      xdgConfigHome: fixture.configHome,
+      journalPath: fixture.journalPath,
+      env: secretEnvironment(),
+      dependencies: {
+        loadDataForSeoAdapter: loadAdapter,
+        startAttempt: async (options) => {
+          const event = await startAttempt(options);
+          controller.abort(new Error("SIGINT"));
+          return event;
+        },
+      },
+    });
+
+    expect(result.exitCode).toBe(130);
+    expect(result.envelope).toMatchObject({
+      ok: false,
+      error: { code: "CANCELLED", outcome: "not_dispatched" },
+      meta: {
+        operationId: expect.any(String),
+        spend: { outcome: "confirmed_not_charged", cost: { amount: "0.000000" } },
+      },
+    });
+    expect(loadAdapter).not.toHaveBeenCalled();
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.events.map((event) => event.type)).toEqual([
+      "attempt_started",
+      "attempt_settled",
+    ]);
+    expect(journal.operations[0]?.latestSettlement).toMatchObject({
+      providerResult: "not_dispatched",
+      errorCode: "CANCELLED",
+      spend: { outcome: "confirmed_not_charged", costMicros: 0, policyBreach: false },
+    });
+    expect(journal.operations[0]?.state).toBe("not_dispatched");
   });
 
   it("preserves LOCAL_IO_ERROR when SIGINT is followed by a failed pre-dispatch settlement", async () => {
@@ -617,19 +705,19 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: controller.signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
-        authorizeIfUnblocked: async (options) => {
-          const event = await authorizeIfUnblocked(options);
+        startAttempt: async (options) => {
+          const event = await startAttempt(options);
           controller.abort(new Error("SIGINT"));
           return event;
         },
-        appendSettled: async () => {
-          throw new LedgerError(
-            "LEDGER_IO_ERROR",
+        settleAttempt: async () => {
+          throw new JournalError(
+            "JOURNAL_IO_ERROR",
             "simulated settlement fsync failure",
-            fixture.ledgerPath,
+            fixture.journalPath,
           );
         },
       },
@@ -641,12 +729,13 @@ describe("DataForSEO execution pipeline", () => {
       error: {
         code: "LOCAL_IO_ERROR",
         outcome: "not_dispatched",
-        hint: expect.stringContaining("ledger"),
+        hint: expect.stringContaining("gkit operations"),
       },
-      meta: { attemptId: expect.any(String) },
+      meta: { operationId: expect.any(String) },
     });
-    const ledger = await readLedger({ ledgerPath: fixture.ledgerPath });
-    expect(ledger.events.map((event) => event.type)).toEqual(["authorized"]);
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.events.map((event) => event.type)).toEqual(["attempt_started"]);
+    expect(journal.operations[0]?.state).toBe("unknown");
   });
 
   it("returns confirmed LOCAL_IO_ERROR with artifact receipt when settlement append fails", async () => {
@@ -656,11 +745,11 @@ describe("DataForSEO execution pipeline", () => {
       manifest: fixture.manifest,
       signal: new AbortController().signal,
       xdgConfigHome: fixture.configHome,
-      ledgerPath: fixture.ledgerPath,
+      journalPath: fixture.journalPath,
       env: secretEnvironment(),
       dependencies: {
         loadDataForSeoAdapter: async () => adapter(successResult(24_072)),
-        appendSettled: async () => {
+        settleAttempt: async () => {
           throw new Error("simulated fsync failure");
         },
       },
@@ -675,9 +764,11 @@ describe("DataForSEO execution pipeline", () => {
       },
       meta: {
         artifact: { bytes: 21 },
-        spendOutcome: "confirmed_charged",
+        spend: { outcome: "confirmed_charged" },
       },
     });
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.events.map((event) => event.type)).toEqual(["attempt_started"]);
     expect(await readFile(fixture.outPath, "utf8")).toBe('{"provider":"result"}');
   });
 });
@@ -720,7 +811,7 @@ async function createFixture() {
     configHome,
     requestPath,
     outPath: join(root, "result.json"),
-    ledgerPath: join(root, "state", "gkit", "ledger.jsonl"),
+    journalPath: join(root, "state", "gkit", "operations.jsonl"),
     manifest: await loadExecutableManifest(manifestPath),
   };
 }
@@ -732,7 +823,7 @@ function callCommand(
   return {
     kind: "dataforseo-call",
     profileFlag: "app-a",
-    operationId: "dataforseo.backlinks.bulk_ranks.live",
+    capabilityId: "dataforseo.backlinks.bulk_ranks.live",
     input: `@${fixture.requestPath}`,
     allowSpend: true,
     maxSpendUsd: "0.05",

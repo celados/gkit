@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ParsedCommand } from "./args";
 import { serializeEnvelope } from "./envelope";
 import { executeGoogleAdsCall } from "./execute-google-ads";
+import { readJournal } from "./journal";
 import { loadExecutableManifest } from "./manifest";
 
 const temporaryDirectories: string[] = [];
@@ -30,6 +31,7 @@ describe("Google Ads execution boundary", () => {
       signal: new AbortController().signal,
       env: {},
       xdgConfigHome: fixture.xdgConfigHome,
+      journalPath: fixture.journalPath,
       dependencies: {
         loadGoogleAdsAuth: loadAuth,
         loadGoogleAdsAdapter: loadAdapter,
@@ -47,11 +49,12 @@ describe("Google Ads execution boundary", () => {
           endpoint: "https://googleads.googleapis.com/v24/customers/1234567890/googleAds:search",
         },
       },
-      meta: { provider: "google-ads", cost: null, artifact: null },
+      meta: { provider: "google-ads", operationId: null, spend: null, artifact: null },
     });
     expect(loadAuth).not.toHaveBeenCalled();
     expect(loadAdapter).not.toHaveBeenCalled();
     await expect(readFile(fixture.outPath)).rejects.toThrow();
+    expect((await readJournal({ journalPath: fixture.journalPath })).events).toEqual([]);
   });
 
   it("derives and registers the access token before streaming a secret-safe artifact", async () => {
@@ -76,6 +79,7 @@ describe("Google Ads execution boundary", () => {
         TEST_GOOGLE_ADS_SERVICE_ACCOUNT_FILE: "credentials/google-ads.json",
       },
       xdgConfigHome: fixture.xdgConfigHome,
+      journalPath: fixture.journalPath,
       dependencies: {
         loadGoogleAdsAuth: async () => ({ deriveGoogleAdsAccessToken: deriveAccessToken }),
         loadGoogleAdsAdapter: async () => ({ createGoogleAdsDispatch: createDispatch }),
@@ -98,7 +102,24 @@ describe("Google Ads execution boundary", () => {
         rowCount: 1,
         artifactFormat: "json-array-of-exact-rest-pages",
       },
-      meta: { providerRequestId: "request_123" },
+      meta: { providerRequestId: "request_123", operationId: expect.any(String), spend: null },
+    });
+    const journal = await readJournal({ journalPath: fixture.journalPath });
+    expect(journal.events.map((event) => event.type)).toEqual([
+      "attempt_started",
+      "attempt_settled",
+      "artifact_recorded",
+    ]);
+    expect(journal.operations[0]).toMatchObject({
+      started: {
+        operationId: result.envelope.meta?.operationId,
+        provider: "google-ads",
+        capability: "google-ads.query.gaql",
+        effects: ["read"],
+        spend: null,
+      },
+      latestSettlement: { providerResult: "succeeded", providerRequestId: "request_123", spend: null },
+      state: "succeeded",
     });
     expect(await readFile(fixture.outPath, "utf8")).toBe('[{"results":[{"campaign":{"id":"1"}}]}]');
     const serialized = serializeEnvelope(result.envelope, result.secrets);
@@ -119,6 +140,7 @@ describe("Google Ads execution boundary", () => {
         TEST_GOOGLE_ADS_SERVICE_ACCOUNT_FILE: "credentials/google-ads.json",
       },
       xdgConfigHome: fixture.xdgConfigHome,
+      journalPath: fixture.journalPath,
       dependencies: {
         loadGoogleAdsAuth: async () => ({
           deriveGoogleAdsAccessToken: async () => {
@@ -135,6 +157,7 @@ describe("Google Ads execution boundary", () => {
     });
     expect(loadAdapter).not.toHaveBeenCalled();
     await expect(readFile(fixture.outPath)).rejects.toThrow();
+    expect((await readJournal({ journalPath: fixture.journalPath })).events).toEqual([]);
   });
 });
 
@@ -145,7 +168,7 @@ function command(
   return {
     kind: "google-ads-call",
     profileFlag: "app-a",
-    operationId: "google-ads.query.gaql",
+    capabilityId: "google-ads.query.gaql",
     input: JSON.stringify({ query: "SELECT campaign.id FROM campaign LIMIT 1" }),
     out: outPath,
     force: false,
@@ -188,6 +211,7 @@ async function createFixture() {
   return {
     root,
     xdgConfigHome,
+    journalPath: join(root, "state", "gkit", "operations.jsonl"),
     outPath: join(root, "result.json"),
     manifest: await loadExecutableManifest(
       new URL("../generated/google-ads/manifest.json", import.meta.url).pathname,

@@ -39,6 +39,7 @@ export async function executeBingCall(options: {
   env?: Readonly<Record<string, string | undefined>>;
   xdgConfigHome?: string;
   home?: string;
+  journalPath?: string;
 }) {
   return await executeReadProviderCall<BingConfig, BingOperation, BingCredentials>({
     ...options,

@@ -36,7 +36,7 @@ List Search Console properties accessible to the profile-bound service account.
 ### Invocation
 
 ```bash
-gkit --profile openclaw-web gsc api call --operation-id gsc.properties.list --input '{}' --out gsc-properties.json --dry-run
+gkit --profile openclaw-web gsc api call --capability-id gsc.properties.list --input '{}' --out gsc-properties.json --dry-run
 ```
 
 ## gsc.search-analytics.query
@@ -138,7 +138,7 @@ Run one provider-native Search Analytics read for the profile-bound or explicitl
 ### Invocation
 
 ```bash
-gkit --profile openclaw-web gsc api call --operation-id gsc.search-analytics.query --input @request.json --out gsc-search.json --dry-run
+gkit --profile openclaw-web gsc api call --capability-id gsc.search-analytics.query --input @request.json --out gsc-search.json --dry-run
 ```
 
 ## gsc.sitemaps.get
@@ -180,7 +180,7 @@ Read details for one exact sitemap URL under one Search Console property.
 #### Read a sitemap returned by gsc.sitemaps.list for openclaw-web
 
 ```bash
-gkit --profile openclaw-web gsc api call --operation-id gsc.sitemaps.get --input @request.json --out gsc-sitemap.json --dry-run
+gkit --profile openclaw-web gsc api call --capability-id gsc.sitemaps.get --input @request.json --out gsc-sitemap.json --dry-run
 ```
 
 ## gsc.sitemaps.list
@@ -217,7 +217,7 @@ List sitemaps for one Search Console property.
 ### Invocation
 
 ```bash
-gkit --profile openclaw-web gsc api call --operation-id gsc.sitemaps.list --input '{}' --out gsc-sitemaps.json --dry-run
+gkit --profile openclaw-web gsc api call --capability-id gsc.sitemaps.list --input '{}' --out gsc-sitemaps.json --dry-run
 ```
 
 ## gsc.sitemaps.submit
@@ -260,7 +260,7 @@ Submit or resubmit one exact sitemap URL for one Search Console property. Change
 #### Submit the openclaw-web sitemap index
 
 ```bash
-gkit --profile openclaw-web gsc api call --operation-id gsc.sitemaps.submit --input @request.json --allow-write --out gsc-sitemap-submit.json --dry-run
+gkit --profile openclaw-web gsc api call --capability-id gsc.sitemaps.submit --input @request.json --allow-write --out gsc-sitemap-submit.json --dry-run
 ```
 
 ## gsc.url-inspection.inspect
@@ -307,5 +307,5 @@ Read Google's indexed URL inspection result for one URL under the selected prope
 #### Inspect a URL under the openclaw-web Search Console property
 
 ```bash
-gkit --profile openclaw-web gsc api call --operation-id gsc.url-inspection.inspect --input @request.json --out gsc-inspection.json --dry-run
+gkit --profile openclaw-web gsc api call --capability-id gsc.url-inspection.inspect --input @request.json --out gsc-inspection.json --dry-run
 ```

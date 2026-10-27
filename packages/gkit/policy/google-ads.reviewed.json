@@ -29,12 +29,12 @@
             {
               "title": "Safe preflight",
               "input": {},
-              "command": "gkit --profile openclaw-web google-ads api call --operation-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json --dry-run"
+              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json --dry-run"
             },
             {
               "title": "Live read",
               "input": {},
-              "command": "gkit --profile openclaw-web google-ads api call --operation-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json"
+              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json"
             }
           ]
         }
@@ -72,7 +72,7 @@
             {
               "title": "Describe campaign.id",
               "input": { "name": "campaign.id" },
-              "command": "gkit --profile openclaw-web google-ads api call --operation-id google-ads.fields.describe --input '{\"name\":\"campaign.id\"}' --out campaign-id-field.json --dry-run"
+              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.fields.describe --input '{\"name\":\"campaign.id\"}' --out campaign-id-field.json --dry-run"
             }
           ]
         },
@@ -98,7 +98,7 @@
             {
               "title": "Search campaign fields",
               "input": { "query": "SELECT name, category, data_type WHERE name LIKE 'campaign.%'" },
-              "command": "gkit --profile openclaw-web google-ads api call --operation-id google-ads.fields.search --input @fields.json --out fields-pages.json --dry-run"
+              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.fields.search --input @fields.json --out fields-pages.json --dry-run"
             }
           ]
         }
@@ -138,7 +138,7 @@
               "input": {
                 "query": "SELECT campaign.id, campaign.name FROM campaign ORDER BY campaign.id LIMIT 25"
               },
-              "command": "gkit --profile openclaw-web google-ads api call --operation-id google-ads.query.gaql --input @gaql.json --out gaql-pages.json --dry-run"
+              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.query.gaql --input @gaql.json --out gaql-pages.json --dry-run"
             }
           ]
         }
@@ -224,7 +224,7 @@
                 "language": "languageConstants/1000",
                 "keywordPlanNetwork": "GOOGLE_SEARCH"
               },
-              "command": "gkit --profile openclaw-web google-ads api call --operation-id google-ads.keyword-plan.generate-ideas --input @ideas.json --out keyword-ideas-pages.json --dry-run"
+              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.keyword-plan.generate-ideas --input @ideas.json --out keyword-ideas-pages.json --dry-run"
             }
           ]
         }
@@ -280,7 +280,7 @@
                 "keywordPlanNetwork": "GOOGLE_SEARCH",
                 "historicalMetricsOptions": { "includeAverageCpc": true }
               },
-              "command": "gkit --profile openclaw-web google-ads api call --operation-id google-ads.keyword-plan.generate-historical-metrics --input @historical.json --out keyword-history-pages.json --dry-run"
+              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.keyword-plan.generate-historical-metrics --input @historical.json --out keyword-history-pages.json --dry-run"
             }
           ]
         }

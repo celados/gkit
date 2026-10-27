@@ -128,8 +128,8 @@ export async function evaluateSlice5(options?: {
       const executable = task.answer.commands.find((command) => command.includes(" api call "));
       assert(executable, `Executable task ${task.id} has no api call command.`);
       const parsed = parseGkitCommand(executable);
-      assert("operationId" in parsed, `Task ${task.id} did not parse as an api call.`);
-      assert(parsed.operationId === task.answer.capabilityId, `Task ${task.id} command targets the wrong capability.`);
+      assert("capabilityId" in parsed, `Task ${task.id} did not parse as an api call.`);
+      assert(parsed.capabilityId === task.answer.capabilityId, `Task ${task.id} command targets the wrong capability.`);
     }
   }
 

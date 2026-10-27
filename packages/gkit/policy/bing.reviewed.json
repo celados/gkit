@@ -26,7 +26,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.sites.list --input '{}' --out bing-sites.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.sites.list --input '{}' --out bing-sites.json --dry-run"
           }
         ]
       }
@@ -53,7 +53,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.rank --input '{}' --out bing-rank.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.rank --input '{}' --out bing-rank.json --dry-run"
           }
         ]
       }
@@ -80,7 +80,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.queries --input '{}' --out bing-queries.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.queries --input '{}' --out bing-queries.json --dry-run"
           }
         ]
       }
@@ -107,7 +107,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.pages --input '{}' --out bing-pages.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.pages --input '{}' --out bing-pages.json --dry-run"
           }
         ]
       }
@@ -138,7 +138,7 @@
         "examples": [
           {
             "input": { "query": "website cloner" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.query --input @request.json --out bing-query.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.query --input @request.json --out bing-query.json --dry-run"
           }
         ]
       }
@@ -169,7 +169,7 @@
         "examples": [
           {
             "input": { "pageUrl": "https://example.com/docs" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.page-queries --input @request.json --out bing-page-queries.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.page-queries --input @request.json --out bing-page-queries.json --dry-run"
           }
         ]
       }
@@ -200,7 +200,7 @@
         "examples": [
           {
             "input": { "query": "website cloner" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.query-pages --input @request.json --out bing-query-pages.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.query-pages --input @request.json --out bing-query-pages.json --dry-run"
           }
         ]
       }
@@ -232,7 +232,7 @@
         "examples": [
           {
             "input": { "query": "website cloner", "pageUrl": "https://example.com/docs" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.traffic.query-page --input @request.json --out bing-query-page.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.traffic.query-page --input @request.json --out bing-query-page.json --dry-run"
           }
         ]
       }
@@ -259,7 +259,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.crawl.stats --input '{}' --out bing-crawl-stats.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.crawl.stats --input '{}' --out bing-crawl-stats.json --dry-run"
           }
         ]
       }
@@ -286,7 +286,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.crawl.issues --input '{}' --out bing-crawl-issues.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.crawl.issues --input '{}' --out bing-crawl-issues.json --dry-run"
           }
         ]
       }
@@ -313,7 +313,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.crawl.settings --input '{}' --out bing-crawl-settings.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.crawl.settings --input '{}' --out bing-crawl-settings.json --dry-run"
           }
         ]
       }
@@ -343,7 +343,7 @@
         "examples": [
           {
             "input": { "page": 0 },
-            "command": "gkit --profile <app> bing api call --operation-id bing.links.pages --input '{\"page\":0}' --out bing-links.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.links.pages --input '{\"page\":0}' --out bing-links.json --dry-run"
           }
         ]
       }
@@ -375,7 +375,7 @@
         "examples": [
           {
             "input": { "link": "https://example.com/docs", "page": 0 },
-            "command": "gkit --profile <app> bing api call --operation-id bing.links.url --input @request.json --out bing-url-links.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.links.url --input @request.json --out bing-url-links.json --dry-run"
           }
         ]
       }
@@ -402,7 +402,7 @@
         "examples": [
           {
             "input": {},
-            "command": "gkit --profile <app> bing api call --operation-id bing.sitemaps.list --input '{}' --out bing-sitemaps.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.sitemaps.list --input '{}' --out bing-sitemaps.json --dry-run"
           }
         ]
       }
@@ -433,7 +433,7 @@
         "examples": [
           {
             "input": { "feedUrl": "https://example.com/sitemap.xml" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.sitemaps.get --input @request.json --out bing-sitemap.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.sitemaps.get --input @request.json --out bing-sitemap.json --dry-run"
           }
         ]
       }
@@ -464,7 +464,7 @@
         "examples": [
           {
             "input": { "url": "https://example.com/docs" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.urls.info --input @request.json --out bing-url-info.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.urls.info --input @request.json --out bing-url-info.json --dry-run"
           }
         ]
       }
@@ -495,7 +495,7 @@
         "examples": [
           {
             "input": { "url": "https://example.com/docs" },
-            "command": "gkit --profile <app> bing api call --operation-id bing.urls.traffic --input @request.json --out bing-url-traffic.json --dry-run"
+            "command": "gkit --profile <app> bing api call --capability-id bing.urls.traffic --input @request.json --out bing-url-traffic.json --dry-run"
           }
         ]
       }

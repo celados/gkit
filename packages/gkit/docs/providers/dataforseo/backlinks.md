@@ -131,13 +131,13 @@ Search reviewed ChatGPT or Google AI mention records for one domain in United St
 #### Safe preflight
 
 ```bash
-gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.ai_optimization.llm_mentions.search.live --input @req.json --allow-spend --max-spend-usd 0.150000 --out llm-mentions.json --dry-run
+gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.ai_optimization.llm_mentions.search.live --input @req.json --allow-spend --max-spend-usd 0.150000 --out llm-mentions.json --dry-run
 ```
 
 #### Live call after reviewing the dry-run
 
 ```bash
-gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.ai_optimization.llm_mentions.search.live --input @req.json --allow-spend --max-spend-usd 0.150000 --out llm-mentions.json
+gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.ai_optimization.llm_mentions.search.live --input @req.json --allow-spend --max-spend-usd 0.150000 --out llm-mentions.json
 ```
 
 ## dataforseo.backlinks.bulk_ranks.live
@@ -192,13 +192,13 @@ Return DataForSEO backlink ranks for up to 1,000 targets in one live request.
 #### Safe preflight
 
 ```bash
-gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.bulk_ranks.live --input @req.json --allow-spend --max-spend-usd 0.024072 --out ranks.json --dry-run
+gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.bulk_ranks.live --input @req.json --allow-spend --max-spend-usd 0.024072 --out ranks.json --dry-run
 ```
 
 #### Live call after reviewing the dry-run
 
 ```bash
-gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.bulk_ranks.live --input @req.json --allow-spend --max-spend-usd 0.024072 --out ranks.json
+gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.bulk_ranks.live --input @req.json --allow-spend --max-spend-usd 0.024072 --out ranks.json
 ```
 
 ## dataforseo.backlinks.referring_domains.live
@@ -281,13 +281,13 @@ Return up to 100 reviewed referring-domain rows for one target.
 #### Safe preflight
 
 ```bash
-gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.referring_domains.live --input @req.json --allow-spend --max-spend-usd 0.024720 --out referring-domains.json --dry-run
+gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.referring_domains.live --input @req.json --allow-spend --max-spend-usd 0.024720 --out referring-domains.json --dry-run
 ```
 
 #### Live call after reviewing the dry-run
 
 ```bash
-gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.referring_domains.live --input @req.json --allow-spend --max-spend-usd 0.024720 --out referring-domains.json
+gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.referring_domains.live --input @req.json --allow-spend --max-spend-usd 0.024720 --out referring-domains.json
 ```
 
 ## dataforseo.backlinks.summary.live
@@ -355,13 +355,13 @@ Return the reviewed live backlink summary for one domain, subdomain, or page.
 #### Safe preflight
 
 ```bash
-gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.summary.live --input @req.json --allow-spend --max-spend-usd 0.024036 --out summary.json --dry-run
+gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.summary.live --input @req.json --allow-spend --max-spend-usd 0.024036 --out summary.json --dry-run
 ```
 
 #### Live call after reviewing the dry-run
 
 ```bash
-gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.backlinks.summary.live --input @req.json --allow-spend --max-spend-usd 0.024036 --out summary.json
+gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.backlinks.summary.live --input @req.json --allow-spend --max-spend-usd 0.024036 --out summary.json
 ```
 
 ## dataforseo.serp.google.organic.live.advanced
@@ -473,11 +473,11 @@ Return one Google Organic live advanced SERP with a reviewed maximum depth of 10
 #### Safe preflight
 
 ```bash
-gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.serp.google.organic.live.advanced --input @req.json --allow-spend --max-spend-usd 0.002000 --out serp.json --dry-run
+gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.serp.google.organic.live.advanced --input @req.json --allow-spend --max-spend-usd 0.002000 --out serp.json --dry-run
 ```
 
 #### Live call after reviewing the dry-run
 
 ```bash
-gkit --profile clonesite.ai dataforseo api call --operation-id dataforseo.serp.google.organic.live.advanced --input @req.json --allow-spend --max-spend-usd 0.002000 --out serp.json
+gkit --profile clonesite.ai dataforseo api call --capability-id dataforseo.serp.google.organic.live.advanced --input @req.json --allow-spend --max-spend-usd 0.002000 --out serp.json
 ```

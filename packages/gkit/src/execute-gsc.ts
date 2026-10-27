@@ -33,6 +33,7 @@ export async function executeGscCall(options: {
   env?: Readonly<Record<string, string | undefined>>;
   xdgConfigHome?: string;
   home?: string;
+  journalPath?: string;
   fetch?: GscFetch;
   deriveAccessToken?: typeof deriveGscAccessToken;
 }) {

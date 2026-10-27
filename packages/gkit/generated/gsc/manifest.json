@@ -28,7 +28,7 @@
       "examples": [
         {
           "input": {},
-          "command": "gkit --profile openclaw-web gsc api call --operation-id gsc.properties.list --input '{}' --out gsc-properties.json --dry-run"
+          "command": "gkit --profile openclaw-web gsc api call --capability-id gsc.properties.list --input '{}' --out gsc-properties.json --dry-run"
         }
       ]
     },
@@ -134,7 +134,7 @@
             ],
             "rowLimit": 25
           },
-          "command": "gkit --profile openclaw-web gsc api call --operation-id gsc.search-analytics.query --input @request.json --out gsc-search.json --dry-run"
+          "command": "gkit --profile openclaw-web gsc api call --capability-id gsc.search-analytics.query --input @request.json --out gsc-search.json --dry-run"
         }
       ]
     },
@@ -174,7 +174,7 @@
           "input": {
             "feedpath": "https://openclawai.io/sitemap-index.xml"
           },
-          "command": "gkit --profile openclaw-web gsc api call --operation-id gsc.sitemaps.get --input @request.json --out gsc-sitemap.json --dry-run"
+          "command": "gkit --profile openclaw-web gsc api call --capability-id gsc.sitemaps.get --input @request.json --out gsc-sitemap.json --dry-run"
         }
       ]
     },
@@ -208,7 +208,7 @@
       "examples": [
         {
           "input": {},
-          "command": "gkit --profile openclaw-web gsc api call --operation-id gsc.sitemaps.list --input '{}' --out gsc-sitemaps.json --dry-run"
+          "command": "gkit --profile openclaw-web gsc api call --capability-id gsc.sitemaps.list --input '{}' --out gsc-sitemaps.json --dry-run"
         }
       ]
     },
@@ -249,7 +249,7 @@
           "input": {
             "feedpath": "https://openclawai.io/sitemap-index.xml"
           },
-          "command": "gkit --profile openclaw-web gsc api call --operation-id gsc.sitemaps.submit --input @request.json --allow-write --out gsc-sitemap-submit.json --dry-run"
+          "command": "gkit --profile openclaw-web gsc api call --capability-id gsc.sitemaps.submit --input @request.json --allow-write --out gsc-sitemap-submit.json --dry-run"
         }
       ]
     },
@@ -294,7 +294,7 @@
           "input": {
             "inspectionUrl": "https://openclawai.io/"
           },
-          "command": "gkit --profile openclaw-web gsc api call --operation-id gsc.url-inspection.inspect --input @request.json --out gsc-inspection.json --dry-run"
+          "command": "gkit --profile openclaw-web gsc api call --capability-id gsc.url-inspection.inspect --input @request.json --out gsc-inspection.json --dry-run"
         }
       ]
     }

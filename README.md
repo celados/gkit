@@ -157,7 +157,7 @@ reviewing the request:
 
 ```bash
 gkit --profile my-app gsc api call \
-  --operation-id gsc.properties.list \
+  --capability-id gsc.properties.list \
   --input '{}' \
   --out ./gsc-properties-plan.json \
   --dry-run
@@ -167,7 +167,7 @@ Remove `--dry-run` only when the profile and request are correct:
 
 ```bash
 gkit --profile my-app gsc api call \
-  --operation-id gsc.properties.list \
+  --capability-id gsc.properties.list \
   --input '{}' \
   --out ./gsc-properties.json
 ```
@@ -181,7 +181,7 @@ it gkit fails with `EFFECT_NOT_ALLOWED` before any request:
 
 ```bash
 gkit --profile my-app gsc api call \
-  --operation-id gsc.sitemaps.submit \
+  --capability-id gsc.sitemaps.submit \
   --input '{"feedpath":"https://example.com/sitemap.xml"}' \
   --allow-write \
   --out ./gsc-sitemap-submit.json
@@ -191,6 +191,11 @@ Sitemap submission needs Full or Owner permission for the service account in
 Search Console; a Restricted user receives `AUTH_FAILED`. Google returns an
 empty body, so the artifact is a gkit receipt with `siteUrl`, `feedpath`, and
 `httpStatus`.
+
+Each live call is journaled under `meta.operationId`. Run `gkit operations` to
+see recent operations and anything still `unknown`; reconcile those with
+`gkit operations reconcile` and a provider evidence reference instead of
+rerunning them.
 
 ### HubSpot read-only example
 
@@ -205,7 +210,7 @@ cannot be dispatched.
 gkit --profile my-app hubspot doctor
 gkit describe --id hubspot.crm.objects.search
 gkit --profile my-app hubspot api call \
-  --operation-id hubspot.crm.objects.search \
+  --capability-id hubspot.crm.objects.search \
   --input @hubspot-search.json \
   --out ./hubspot-contact-search.json \
   --dry-run
