@@ -25,6 +25,7 @@ export type ParsedCommand =
   | { kind: "gsc-doctor"; profileFlag: string | null }
   | { kind: "posthog-doctor"; profileFlag: string | null }
   | { kind: "hubspot-doctor"; profileFlag: string | null }
+  | { kind: "pagespeed-doctor"; profileFlag: string | null }
   | {
       kind: "dataforseo-call";
       profileFlag: string | null;
@@ -67,6 +68,15 @@ export type ParsedCommand =
     }
   | {
       kind: "posthog-call";
+      profileFlag: string | null;
+      capabilityId: string;
+      input: string;
+      out: string | null;
+      force: boolean;
+      dryRun: boolean;
+    }
+  | {
+      kind: "pagespeed-call";
       profileFlag: string | null;
       capabilityId: string;
       input: string;
@@ -268,6 +278,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
     rest[0] !== "google-ads" &&
     rest[0] !== "gsc" &&
     rest[0] !== "hubspot" &&
+    rest[0] !== "pagespeed" &&
     rest[0] !== "posthog"
   ) {
     invalid(`Unknown command: ${rest[0]}`);
@@ -286,7 +297,9 @@ export function parseArgs(argv: string[]): ParsedCommand {
                 ? "gsc-doctor"
                 : provider === "hubspot"
                   ? "hubspot-doctor"
-                  : "posthog-doctor",
+                  : provider === "pagespeed"
+                    ? "pagespeed-doctor"
+                    : "posthog-doctor",
       profileFlag,
     };
   }
@@ -324,7 +337,9 @@ export function parseArgs(argv: string[]): ParsedCommand {
           ? "posthog-call"
           : provider === "hubspot"
             ? "hubspot-call"
-          : "google-ads-call",
+            : provider === "pagespeed"
+              ? "pagespeed-call"
+              : "google-ads-call",
       profileFlag,
       capabilityId: requiredString(flags, "--capability-id"),
       input: requiredString(flags, "--input"),
@@ -397,6 +412,10 @@ export function renderHelp(): string {
     "  gkit --profile <app> hubspot doctor",
     "  gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path> --dry-run",
     "  gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path>",
+    "",
+    "PageSpeed Insights:",
+    "  gkit --profile <app> pagespeed doctor",
+    "  gkit --profile <app> pagespeed api call --capability-id pagespeed.run --input @request.json --out <path> --dry-run",
     "",
     "Site facts:",
     "  gkit --schema site",

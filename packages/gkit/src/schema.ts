@@ -28,6 +28,9 @@ export function buildGkitSchema(
   const hubSpotCapabilityCount = capabilities.filter(
     (capability) => capability.provider === "hubspot",
   ).length;
+  const pageSpeedCapabilityCount = capabilities.filter(
+    (capability) => capability.provider === "pagespeed",
+  ).length;
   if (capabilities.length === 0) {
     throw new GkitFailure({
       code: "INTERNAL_ERROR",
@@ -99,7 +102,7 @@ export function buildGkitSchema(
           {
             call: c
               .meta({
-                description: `Call ${dataForSeoCapabilityCount} operations: gkit --profile <app> dataforseo api call --capability-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run.`,
+                description: "gkit --profile <app> dataforseo api call --capability-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run.",
                 examples: [
                   "gkit --profile <app> dataforseo api call --capability-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run",
                 ],
@@ -123,7 +126,7 @@ export function buildGkitSchema(
           {
             call: c
               .meta({
-                description: `Call ${bingCapabilityCount} reads: gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path> --dry-run.`,
+                description: "gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path> --dry-run.",
                 examples: [
                   "gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path> --dry-run",
                 ],
@@ -172,7 +175,7 @@ export function buildGkitSchema(
           {
             call: c
               .meta({
-                description: `Call ${googleAdsCapabilityCount} reads: gkit --profile <app> google-ads api call --capability-id <id> --input @request.json --out <path> --dry-run.`,
+                description: "gkit --profile <app> google-ads api call --capability-id <id> --input @request.json --out <path> --dry-run.",
                 examples: [
                   "gkit --profile <app> google-ads api call --capability-id <id> --input @request.json --out <path> --dry-run",
                 ],
@@ -196,7 +199,7 @@ export function buildGkitSchema(
           {
             call: c
               .meta({
-                description: `Call ${gscCapabilityCount}: gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path> --dry-run.`,
+                description: "gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path> --dry-run.",
                 examples: [
                   "gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path> --dry-run",
                 ],
@@ -220,9 +223,33 @@ export function buildGkitSchema(
           {
             call: c
               .meta({
-                description: `Call ${hubSpotCapabilityCount} reads: gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path> --dry-run.`,
+                description: "gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path> --dry-run.",
                 examples: [
                   "gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path> --dry-run",
+                ],
+              })
+              .input(s(v.strictObject({}))),
+          },
+        ),
+      },
+    ),
+    pagespeed: group(
+      { description: `${pageSpeedCapabilityCount} reviewed reads.` },
+      {
+        doctor: c
+          .meta({
+            description: "Profile check.",
+            examples: ["gkit --profile app-a pagespeed doctor"],
+          })
+          .input(s(v.strictObject({}))),
+        api: group(
+          { description: "Native API." },
+          {
+            call: c
+              .meta({
+                description: "Call pagespeed.run.",
+                examples: [
+                  "gkit --profile <app> pagespeed api call --capability-id pagespeed.run --input @request.json --out <path> --dry-run",
                 ],
               })
               .input(s(v.strictObject({}))),
@@ -349,6 +376,10 @@ function rewriteArgcExamples(
     .replace(
       /gkit gsc\.api\.call "[^"]*"/g,
       "gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path> --dry-run",
+    )
+    .replace(
+      /gkit pagespeed\.api\.call "[^"]*"/g,
+      "gkit --profile <app> pagespeed api call --capability-id pagespeed.run --input @request.json --out <path> --dry-run",
     )
     .replace(
       /gkit hubspot\.api\.call "[^"]*"/g,

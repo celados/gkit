@@ -142,6 +142,7 @@ describe("gkit argv parser", () => {
     ["bing", "bing.sites.list", "bing-call"],
     ["gsc", "gsc.properties.list", "gsc-call"],
     ["hubspot", "hubspot.crm.objects.list", "hubspot-call"],
+    ["pagespeed", "pagespeed.run", "pagespeed-call"],
   ] as const)(
     "accepts the read-only %s call without spend flags",
     (provider, capabilityId, kind) => {
@@ -165,7 +166,7 @@ describe("gkit argv parser", () => {
         profileFlag: "app-a",
         capabilityId,
         input: "{}",
-        ...(provider === "hubspot" ? {} : { allowWrite: false }),
+        ...(provider === "hubspot" || provider === "pagespeed" ? {} : { allowWrite: false }),
         out: "result.json",
         force: false,
         dryRun: true,

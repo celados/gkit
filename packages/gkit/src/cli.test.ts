@@ -32,6 +32,7 @@ describe("gkit process contract", () => {
     expect(result.stdout).toContain("gkit --profile <app> bing api call");
     expect(result.stdout).toContain("gkit --profile <app> gsc api call");
     expect(result.stdout).toContain("gkit --profile <app> hubspot api call");
+    expect(result.stdout).toContain("pagespeed: {");
     expect(result.stdout).toContain("gkit describe --id <capability-id>");
     expect(result.stdout).toContain("argc dotted commands and @run are intentionally not exposed");
     expect(result.stdout).not.toContain("gkit dataforseo.api.call");
@@ -301,6 +302,41 @@ describe("gkit process contract", () => {
       { type: "attempt_settled", providerResult: "succeeded", providerRequestId: "req_123" },
       { type: "artifact_recorded" },
     ]);
+  });
+
+  it("checks PageSpeed readiness without an API key and dry-runs without journaling", async () => {
+    const fixture = await createCliFixture();
+    const doctor = await runCli(["--profile", "app-a", "pagespeed", "doctor"], fixture.env);
+    expect(doctor.exitCode).toBe(0);
+    expect(JSON.parse(doctor.stdout)).toMatchObject({
+      ok: true,
+      data: { provider: "pagespeed", apiKeyConfigured: false, networkProbe: "unknown" },
+    });
+
+    const dryRun = await runCli(
+      [
+        "--profile",
+        "app-a",
+        "pagespeed",
+        "api",
+        "call",
+        "--capability-id",
+        "pagespeed.run",
+        "--input",
+        JSON.stringify({ url: "https://example.com/" }),
+        "--out",
+        fixture.outPath,
+        "--dry-run",
+      ],
+      fixture.env,
+    );
+    expect(dryRun.exitCode).toBe(0);
+    expect(JSON.parse(dryRun.stdout)).toMatchObject({
+      ok: true,
+      data: { dryRun: true, requestPlan: { provider: "pagespeed", method: "GET" } },
+      meta: { provider: "pagespeed", operationId: null, spend: null },
+    });
+    expect(await pathExists(fixture.journalPath)).toBe(false);
   });
 
   it("emits exactly one JSON envelope and exits 1 for argv errors", async () => {
@@ -722,6 +758,7 @@ async function createCliFixture() {
           policy: {},
           secrets: { accessToken: "env:TEST_HUBSPOT_ACCESS_TOKEN" },
         },
+        pagespeed: {},
       },
     }),
   );

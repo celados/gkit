@@ -224,6 +224,8 @@ function renderInventoryDocs(
       ? "Google Search Console"
       : provider === "hubspot"
         ? "HubSpot"
+        : provider === "pagespeed"
+          ? "PageSpeed Insights"
         : "Bing Webmaster";
   const lines = [
     "---",

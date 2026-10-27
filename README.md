@@ -4,7 +4,7 @@ Profile-bound CLI for agent-first access to growth providers. This repository
 has one CLI and one workspace package: `gkit`.
 
 The reviewed provider surface includes DataForSEO, PostHog, Google Ads, Google
-Search Console, Bing Webmaster, and HubSpot.
+Search Console, Bing Webmaster, HubSpot, and PageSpeed Insights.
 
 ## Requirements
 
@@ -106,6 +106,11 @@ Provider execution must bind exactly one App profile. Create one JSON file at
       "config": {},
       "secrets": {
         "accessToken": "env:MY_APP_HUBSPOT_ACCESS_TOKEN"
+      }
+    },
+    "pagespeed": {
+      "secrets": {
+        "apiKey": "env:MY_APP_PAGESPEED_API_KEY"
       }
     }
   }
@@ -225,6 +230,21 @@ artifacts access-controlled and request only the reviewed properties required
 for the analysis. Search pages are capped at 200 and one search query cannot
 page beyond 10,000 results; other list surfaces use lower reviewed page and
 total-result bounds documented by `describe`.
+
+### PageSpeed Insights example
+
+`pagespeed.run` runs Lighthouse for one URL and returns category scores plus
+whether Chrome UX Report field data exists for the URL and its origin; the raw
+PageSpeed response is the artifact. The `apiKey` secret is optional: without it
+requests share Google's low anonymous quota. Runs take tens of seconds.
+
+```bash
+gkit --profile my-app pagespeed doctor
+gkit --profile my-app pagespeed api call \
+  --capability-id pagespeed.run \
+  --input '{"url":"https://example.com/","strategy":"mobile","categories":["performance","seo"]}' \
+  --out ./pagespeed-home.json
+```
 
 ## Configure an Agent
 

@@ -6,6 +6,7 @@ export function renderProviderDocs(manifest: LoadedExecutableManifest): string {
       dataforseo: "DataForSEO",
       "google-ads": "Google Ads",
       hubspot: "HubSpot",
+      pagespeed: "PageSpeed Insights",
       posthog: "PostHog",
     }[manifest.document.provider] ?? manifest.document.provider;
   const lines = [

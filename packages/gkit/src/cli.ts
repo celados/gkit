@@ -11,6 +11,7 @@ import {
   runGoogleAdsDoctor,
   runGscDoctor,
   runHubSpotDoctor,
+  runPageSpeedDoctor,
   runPostHogDoctor,
 } from "./doctor";
 import {
@@ -27,6 +28,7 @@ import { executeBingCall } from "./execute-bing";
 import { executeGoogleAdsCall } from "./execute-google-ads";
 import { executeGscCall } from "./execute-gsc";
 import { executeHubSpotCall } from "./execute-hubspot";
+import { executePageSpeedCall } from "./execute-pagespeed";
 import { executePostHogCall } from "./execute-posthog";
 import {
   defaultJournalPath,
@@ -71,6 +73,12 @@ export const hubSpotManifestPath = fileURLToPath(
 export const hubSpotDocsDirectory = fileURLToPath(
   new URL("../docs/providers/hubspot", import.meta.url),
 );
+export const pageSpeedManifestPath = fileURLToPath(
+  new URL("../generated/pagespeed/manifest.json", import.meta.url),
+);
+export const pageSpeedDocsDirectory = fileURLToPath(
+  new URL("../docs/providers/pagespeed", import.meta.url),
+);
 export const providerDocsDirectory = fileURLToPath(new URL("../docs/providers", import.meta.url));
 
 type TerminalEmitter = {
@@ -110,6 +118,7 @@ export async function main(
     googleAdsManifestPath?: string;
     gscManifestPath?: string;
     hubSpotManifestPath?: string;
+    pageSpeedManifestPath?: string;
     postHogManifestPath?: string;
   } = {},
 ): Promise<void> {
@@ -156,6 +165,7 @@ export async function main(
         command.provider !== "google-ads" &&
         command.provider !== "gsc" &&
         command.provider !== "hubspot" &&
+        command.provider !== "pagespeed" &&
         command.provider !== "posthog"
       ) {
         throw new GkitFailure({
@@ -174,6 +184,8 @@ export async function main(
                 ? gscDocsDirectory
                 : command.provider === "hubspot"
                   ? hubSpotDocsDirectory
+                  : command.provider === "pagespeed"
+                    ? pageSpeedDocsDirectory
                   : command.provider === "posthog"
                     ? postHogDocsDirectory
                     : providerDocsDirectory;
@@ -325,6 +337,12 @@ export async function main(
       process.exitCode = abortController.signal.aborted ? 130 : result.envelope.ok ? 0 : 1;
       return;
     }
+    if (command.kind === "pagespeed-doctor") {
+      const result = await runPageSpeedDoctor({ profileFlag: command.profileFlag });
+      await emitter.writeEnvelope(result.envelope, result.secrets);
+      process.exitCode = abortController.signal.aborted ? 130 : result.envelope.ok ? 0 : 1;
+      return;
+    }
     if (command.kind === "hubspot-doctor") {
       const result = await runHubSpotDoctor({
         profileFlag: command.profileFlag,
@@ -381,6 +399,14 @@ export async function main(
                     command,
                     manifest: await loadExecutableManifest(
                       options.hubSpotManifestPath ?? hubSpotManifestPath,
+                    ),
+                    signal: abortController.signal,
+                  })
+              : command.kind === "pagespeed-call"
+                ? await executePageSpeedCall({
+                    command,
+                    manifest: await loadExecutableManifest(
+                      options.pageSpeedManifestPath ?? pageSpeedManifestPath,
                     ),
                     signal: abortController.signal,
                   })
@@ -441,6 +467,7 @@ async function loadDiscoveryManifests(options: {
   googleAdsManifestPath?: string;
   gscManifestPath?: string;
   hubSpotManifestPath?: string;
+  pageSpeedManifestPath?: string;
   postHogManifestPath?: string;
 }) {
   return await Promise.all([
@@ -449,6 +476,7 @@ async function loadDiscoveryManifests(options: {
     loadExecutableManifest(options.googleAdsManifestPath ?? googleAdsManifestPath),
     loadExecutableManifest(options.gscManifestPath ?? gscManifestPath),
     loadExecutableManifest(options.hubSpotManifestPath ?? hubSpotManifestPath),
+    loadExecutableManifest(options.pageSpeedManifestPath ?? pageSpeedManifestPath),
     loadExecutableManifest(options.postHogManifestPath ?? postHogManifestPath),
   ]);
 }
