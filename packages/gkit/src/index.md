@@ -7,7 +7,7 @@ profiles, or publish to an npm registry — install from GitHub Release
 tarballs.
 
 gkit uses argc only to render the offline schema. The public dispatcher is
-spaced commands (`gkit gsc api call`), not argc dotted paths or `@run`.
+spaced commands (`gkit gsc api call`), not argc dotted paths.
 
 ## Discover Capabilities First
 
@@ -53,7 +53,7 @@ evidence; a successful retry is a new operation, not evidence.
 
 | Don't | Do | Why |
 | --- | --- | --- |
-| Call `gkit gsc.api.call` or `@run` | Use spaced `gkit gsc api call` | argc's dispatcher is not the public surface |
+| Call `gkit gsc.api.call` | Use spaced `gkit gsc api call` | argc's dispatcher is not the public surface |
 | Put tokens in the profile, repo, or argv | `env:NAME` references, inject at runtime | Profiles hold non-secret defaults |
 | Skip doctor before a live request | `gkit --profile <app> <provider> doctor` | Fail closed on missing config or secrets |
 | Pipe a provider payload into context | Persist with `--out` and re-read | stdout is an envelope; the bulk is a file |

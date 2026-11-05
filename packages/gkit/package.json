@@ -37,7 +37,7 @@
     "test:site": "bun run ./scripts/test-site-snapshot.ts"
   },
   "devDependencies": {
-    "@celados/argc": "^7.12.0",
+    "@celados/argc": "^8.0.0",
     "@standard-schema/spec": "^1.0.0",
     "@types/bun": "^1.3.10",
     "@types/node": "^25.6.0",

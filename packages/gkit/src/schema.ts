@@ -305,7 +305,7 @@ export function renderGkitSchema(
 }
 
 function schemaPreamble(): string {
-  return "/** argc dotted commands and @run are intentionally not exposed. */\n";
+  return "/** argc dotted commands are intentionally not exposed. */\n";
 }
 
 function compactRootSchema(generated: string): string {
