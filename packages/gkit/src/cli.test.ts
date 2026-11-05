@@ -34,7 +34,7 @@ describe("gkit process contract", () => {
     expect(result.stdout).toContain("gkit --profile <app> hubspot api call");
     expect(result.stdout).toContain("pagespeed: {");
     expect(result.stdout).toContain("gkit describe --id <capability-id>");
-    expect(result.stdout).toContain("argc dotted commands and @run are intentionally not exposed");
+    expect(result.stdout).toContain("argc dotted commands are intentionally not exposed");
     expect(result.stdout).not.toContain("gkit dataforseo.api.call");
     expect(result.stdout).not.toContain("gkit google-ads.api.call");
     expect(result.stdout).not.toContain("gkit bing.api.call");
