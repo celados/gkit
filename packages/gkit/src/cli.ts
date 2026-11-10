@@ -1,6 +1,5 @@
 import { fileURLToPath } from "node:url";
 
-import { isAgentCapture } from "@celados/argc";
 import { ensureTrailingNewline, formatBareSkill } from "@celados/argc/skill";
 
 import { parseArgs, renderHelp } from "./args";
@@ -138,10 +137,6 @@ export async function main(
 
   try {
     const command = parseArgs(argv);
-    if (refuseCapturedGuide(command, argv)) {
-      process.exitCode = 1;
-      return;
-    }
     if (command.kind === "help") {
       await emitter.writeText(renderHelp());
       process.exitCode = abortController.signal.aborted ? 130 : 0;
@@ -432,36 +427,6 @@ export async function main(
   } finally {
     process.off("SIGINT", onSigint);
   }
-}
-
-/**
- * gkit parses its own argv, so argc's output-capture guard (argc
- * docs/spec-7.12-output-capture.md) is applied here: help, --schema and @skill
- * must be read whole, and an agent piping them into head/grep/$(…) is refused
- * before anything prints. Written to stderr, since stdout is the filter.
- */
-function refuseCapturedGuide(command: ReturnType<typeof parseArgs>, argv: string[]): boolean {
-  if (command.kind !== "help" && command.kind !== "schema" && command.kind !== "skill") return false;
-  if (!isAgentCapture()) return false;
-  const line = ["gkit", ...argv.map(quoteWord)].join(" ");
-  const out = ["gkit", command.kind].join("-");
-  process.stderr.write(
-    [
-      `error: OUTPUT_CAPTURED: gkit ${command.kind === "skill" ? "@skill" : command.kind === "schema" ? "--schema" : "help"} is meant to be read whole, and stdout is a pipe or $(…): head/tail/grep/sed/rg would hand you a fragment that reads like the whole. Nothing ran.`,
-      "run it alone — the shell tool shows all of it:",
-      `  ${line}`,
-      "or keep it whole in a file, then read the whole file:",
-      `  ${line} > "\${TMPDIR:-/tmp}/${out}.out"`,
-      "",
-    ].join("\n"),
-  );
-  return true;
-}
-
-function quoteWord(word: string): string {
-  if (/^[A-Za-z0-9_@%+:,./-][A-Za-z0-9_@%+=:,./-]*$/.test(word)) return word;
-  if (!/["$`\\!]/.test(word)) return `"${word}"`;
-  return `'${word.replaceAll("'", `'\\''`)}'`;
 }
 
 async function renderEmbeddedSkill(
