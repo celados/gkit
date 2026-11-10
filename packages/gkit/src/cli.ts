@@ -1,4 +1,6 @@
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+
+import { resolveAssetRoot } from "./assets";
 
 import { ensureTrailingNewline, formatBareSkill } from "@celados/argc/skill";
 
@@ -41,45 +43,27 @@ import { journalSummary, needsReconciliation, operationView } from "./operations
 import { loadExecutableManifest } from "./manifest";
 import { renderGkitSchema } from "./schema";
 
-export const dataForSeoManifestPath = fileURLToPath(
-  new URL("../generated/dataforseo/manifest.json", import.meta.url),
-);
-export const bingManifestPath = fileURLToPath(
-  new URL("../generated/bing/manifest.json", import.meta.url),
-);
-export const bingDocsDirectory = fileURLToPath(new URL("../docs/providers/bing", import.meta.url));
-export const dataForSeoDocsDirectory = fileURLToPath(
-  new URL("../docs/providers/dataforseo", import.meta.url),
-);
-export const postHogManifestPath = fileURLToPath(
-  new URL("../generated/posthog/manifest.json", import.meta.url),
-);
-export const postHogDocsDirectory = fileURLToPath(
-  new URL("../docs/providers/posthog", import.meta.url),
-);
-export const googleAdsManifestPath = fileURLToPath(
-  new URL("../generated/google-ads/manifest.json", import.meta.url),
-);
-export const googleAdsDocsDirectory = fileURLToPath(
-  new URL("../docs/providers/google-ads", import.meta.url),
-);
-export const gscManifestPath = fileURLToPath(
-  new URL("../generated/gsc/manifest.json", import.meta.url),
-);
-export const gscDocsDirectory = fileURLToPath(new URL("../docs/providers/gsc", import.meta.url));
-export const hubSpotManifestPath = fileURLToPath(
-  new URL("../generated/hubspot/manifest.json", import.meta.url),
-);
-export const hubSpotDocsDirectory = fileURLToPath(
-  new URL("../docs/providers/hubspot", import.meta.url),
-);
-export const pageSpeedManifestPath = fileURLToPath(
-  new URL("../generated/pagespeed/manifest.json", import.meta.url),
-);
-export const pageSpeedDocsDirectory = fileURLToPath(
-  new URL("../docs/providers/pagespeed", import.meta.url),
-);
-export const providerDocsDirectory = fileURLToPath(new URL("../docs/providers", import.meta.url));
+const assetRoot = await resolveAssetRoot();
+const manifestPathFor = (provider: string): string =>
+  join(assetRoot, "generated", provider, "manifest.json");
+const docsDirectoryFor = (provider: string): string =>
+  join(assetRoot, "docs", "providers", provider);
+
+export const dataForSeoManifestPath = manifestPathFor("dataforseo");
+export const bingManifestPath = manifestPathFor("bing");
+export const bingDocsDirectory = docsDirectoryFor("bing");
+export const dataForSeoDocsDirectory = docsDirectoryFor("dataforseo");
+export const postHogManifestPath = manifestPathFor("posthog");
+export const postHogDocsDirectory = docsDirectoryFor("posthog");
+export const googleAdsManifestPath = manifestPathFor("google-ads");
+export const googleAdsDocsDirectory = docsDirectoryFor("google-ads");
+export const gscManifestPath = manifestPathFor("gsc");
+export const gscDocsDirectory = docsDirectoryFor("gsc");
+export const hubSpotManifestPath = manifestPathFor("hubspot");
+export const hubSpotDocsDirectory = docsDirectoryFor("hubspot");
+export const pageSpeedManifestPath = manifestPathFor("pagespeed");
+export const pageSpeedDocsDirectory = docsDirectoryFor("pagespeed");
+export const providerDocsDirectory = join(assetRoot, "docs", "providers");
 
 type TerminalEmitter = {
   writeText(text: string): Promise<void>;

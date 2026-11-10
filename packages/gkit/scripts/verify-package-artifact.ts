@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
@@ -140,6 +140,27 @@ try {
     throw new Error("The installed gkit artifact could not read its provider documentation.");
   }
 
+  // The bare bundle is the team-machine install: it must run with nothing next to it.
+  const bundleDirectory = join(consumerDirectory, "standalone");
+  await mkdir(bundleDirectory, { recursive: true });
+  const bundlePath = join(bundleDirectory, "gkit");
+  await copyFile(join(packageRoot, "dist", "gkit.js"), bundlePath);
+  await chmod(bundlePath, 0o755);
+  const standaloneEnvironment = { XDG_CACHE_HOME: join(consumerDirectory, "standalone-cache") };
+  await runCommand([bundlePath, "--schema", "gsc"], bundleDirectory, standaloneEnvironment);
+  const standaloneDocs = await runCommand(
+    [bundlePath, "docs", "--provider", "gsc"],
+    bundleDirectory,
+    standaloneEnvironment,
+  );
+  const standaloneCapabilities = await readFile(
+    join(standaloneDocs.stdout.trim(), "capabilities.md"),
+    "utf8",
+  );
+  if (!standaloneCapabilities.includes("gsc.properties.list")) {
+    throw new Error("The standalone gkit bundle could not read its embedded documentation.");
+  }
+
   if (outputDirectory) {
     await writeReleaseAssets(tarballPath, packageJson.version, outputDirectory);
   }
@@ -193,12 +214,19 @@ async function writeReleaseAssets(
   const stablePath = join(destination, stableName);
   await copyFile(tarballPath, exactPath, constants.COPYFILE_EXCL);
   await copyFile(tarballPath, stablePath, constants.COPYFILE_EXCL);
+  const bundleName = "gkit";
+  const bundlePath = join(destination, bundleName);
+  await copyFile(join(packageRoot, "dist", "gkit.js"), bundlePath, constants.COPYFILE_EXCL);
+  await chmod(bundlePath, 0o755);
   const digest = createHash("sha256")
     .update(await readFile(tarballPath))
     .digest("hex");
+  const bundleDigest = createHash("sha256")
+    .update(await readFile(bundlePath))
+    .digest("hex");
   await writeFile(
     join(destination, "SHA256SUMS"),
-    `${digest}  ${exactName}\n${digest}  ${stableName}\n`,
+    `${digest}  ${exactName}\n${digest}  ${stableName}\n${bundleDigest}  ${bundleName}\n`,
     { encoding: "utf8", flag: "wx" },
   );
 }

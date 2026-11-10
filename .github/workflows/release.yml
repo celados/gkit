@@ -147,7 +147,7 @@ jobs:
           RELEASE_DIR: ${{ runner.temp }}/gkit-release
           RELEASE_ID: ${{ steps.release.outputs.release_id }}
         run: |
-          for name in "gkit-$VERSION.tgz" gkit.tgz SHA256SUMS; do
+          for name in "gkit-$VERSION.tgz" gkit.tgz gkit SHA256SUMS; do
             path="$RELEASE_DIR/$name"
             local_digest="sha256:$(sha256sum "$path" | cut -d ' ' -f 1)"
             asset_json=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
