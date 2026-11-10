@@ -1,6 +1,6 @@
 {
   "name": "gkit",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": true,
   "description": "Profile-bound, agent-first growth provider CLI.",
   "bin": {
@@ -15,7 +15,7 @@
   "sideEffects": false,
   "scripts": {
     "cli": "bun run ./src/cli.ts",
-    "build": "bun build ./bin/gkit.js --target=bun --outfile=dist/gkit.js",
+    "build": "bun build ./bin/gkit.js --target=bun --minify --define GKIT_STANDALONE=true --outfile=dist/gkit.js && chmod +x dist/gkit.js",
     "check-types": "tsc --noEmit",
     "generate:dataforseo": "bun run ./scripts/generate-dataforseo.ts",
     "generate:dataforseo:check": "bun run ./scripts/generate-dataforseo.ts --check",
