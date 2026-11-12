@@ -25,14 +25,15 @@ describe("gkit process contract", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(Buffer.byteLength(result.stdout)).toBeLessThan(2_000);
+    expect(Buffer.byteLength(result.stdout)).toBeLessThan(2_500);
     expect(result.stdout).toContain("gkit --profile <app> dataforseo api call");
     expect(result.stdout).toContain("gkit --profile <app> posthog api call");
     expect(result.stdout).toContain("gkit --profile <app> google-ads api call");
     expect(result.stdout).toContain("gkit --profile <app> bing api call");
     expect(result.stdout).toContain("gkit --profile <app> gsc api call");
     expect(result.stdout).toContain("gkit --profile <app> hubspot api call");
-    expect(result.stdout).toContain("pagespeed: {");
+    expect(result.stdout).toContain("### pagespeed.api.call");
+    expect(result.stdout).not.toContain("pagespeed.doctor");
     expect(result.stdout).toContain("gkit describe --id <capability-id>");
     expect(result.stdout).toContain("argc dotted commands are intentionally not exposed");
     expect(result.stdout).not.toContain("gkit dataforseo.api.call");
@@ -43,18 +44,18 @@ describe("gkit process contract", () => {
 
     const selected = await runCli(["--schema", "posthog"], fixture.env);
     expect(selected.exitCode).toBe(0);
-    expect(selected.stdout).toContain("posthog:");
-    expect(selected.stdout).not.toContain("dataforseo:");
+    expect(selected.stdout).toContain("### posthog.api.call");
+    expect(selected.stdout).not.toContain("dataforseo");
 
     const googleAds = await runCli(["--schema", "google-ads"], fixture.env);
     expect(googleAds.exitCode).toBe(0);
-    expect(googleAds.stdout).toContain('"google-ads":');
-    expect(googleAds.stdout).not.toContain("posthog:");
+    expect(googleAds.stdout).toContain("### google-ads.api.call");
+    expect(googleAds.stdout).not.toContain("posthog");
 
     const hubspot = await runCli(["--schema", "hubspot"], fixture.env);
     expect(hubspot.exitCode).toBe(0);
-    expect(hubspot.stdout).toContain("hubspot:");
-    expect(hubspot.stdout).not.toContain("posthog:");
+    expect(hubspot.stdout).toContain("### hubspot.api.call");
+    expect(hubspot.stdout).not.toContain("posthog");
   });
 
   it("dispatches HubSpot through the common api call envelope and artifact contract", async () => {

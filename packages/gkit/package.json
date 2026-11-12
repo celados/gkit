@@ -1,6 +1,6 @@
 {
   "name": "gkit",
-  "version": "0.3.6",
+  "version": "0.4.0",
   "private": true,
   "description": "Profile-bound, agent-first growth provider CLI.",
   "bin": {
@@ -37,7 +37,7 @@
     "test:site": "bun run ./scripts/test-site-snapshot.ts"
   },
   "devDependencies": {
-    "@celados/argc": "^10.2.0",
+    "@celados/argc": "^11.0.0",
     "@standard-schema/spec": "^1.0.0",
     "@types/bun": "^1.3.10",
     "@types/node": "^25.6.0",
