@@ -4,6 +4,7 @@ import { resolveAssetRoot } from "./assets";
 
 import { ensureTrailingNewline, formatBareSkill } from "@celados/argc/skill";
 
+import packageJson from "../package.json" with { type: "json" };
 import { parseArgs, renderHelp } from "./args";
 import { embedSkill } from "./skill.embed";
 import { describeCapability } from "./describe";
@@ -124,6 +125,12 @@ export async function main(
     if (command.kind === "help") {
       await emitter.writeText(renderHelp());
       process.exitCode = abortController.signal.aborted ? 130 : 0;
+      return;
+    }
+
+    if (command.kind === "version") {
+      await emitter.writeText(`${packageJson.version}\n`);
+      process.exitCode = 0;
       return;
     }
 

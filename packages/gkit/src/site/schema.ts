@@ -1,59 +1,81 @@
 import { c, group } from "@celados/argc";
 import { toStandardJsonSchema as s } from "@valibot/to-json-schema";
 import * as v from "valibot";
-const command = (description: string, input: v.GenericSchema) =>
-  c.meta({ description }).input(s(input));
+
+// Field keys are the flag spellings `site/commands.ts` parses. Positional
+// arguments are fields described as such, in call order.
+const command = (description: string, input: v.GenericSchema, examples: string[] = []) =>
+  c.meta({ description, examples }).input(s(input));
+const text = (description: string) => v.pipe(v.string(), v.description(description));
+const flag = (description: string) => v.pipe(v.boolean(), v.description(description));
+const snapshot = (description: string) => text(`Positional: ${description}`);
+const dryRun = v.optional(flag("Offline: validate and write the bounded input only"));
 const output = {
-  out: v.optional(v.string()),
-  format: v.optional(v.picklist(["json", "markdown"])),
-  rules: v.optional(v.string()),
+  out: v.optional(text("Report file; required for markdown")),
+  format: v.optional(v.picklist(["json", "markdown"]), "json"),
+  rules: v.optional(text("Audit rules, `@rules.json`")),
 };
 export const siteRouter = group(
   { description: "Portable SiteSnapshot artifacts. No implicit ledger or baseline." },
   {
     doctor: command("Validate local profile/site configuration; no network.", v.strictObject({})),
     discover: command(
-      "gkit --profile <app> site discover --out <new-directory> [--sitemaps @urls.json] [--sitemap-origins @origins.json]. Saves routes.json plus source XML and discovery coverage. Additional sitemap origins never widen the page scope. --dry-run is offline.",
+      "Save routes.json plus source XML and discovery coverage. Extra sitemap origins never widen the page scope.",
       v.strictObject({
-        sitemaps: v.optional(v.string()),
-        sitemapOrigins: v.optional(v.string()),
-        maxSitemaps: v.optional(v.number()),
-        maxUrls: v.optional(v.number()),
-        out: v.string(),
-        dryRun: v.optional(v.boolean()),
+        sitemaps: v.optional(text("URL list, `@urls.json`")),
+        "sitemap-origins": v.optional(text("Extra origins, `@origins.json`")),
+        "max-sitemaps": v.optional(v.number(), 50),
+        "max-urls": v.optional(v.number(), 100000),
+        out: text("New directory"),
+        "dry-run": dryRun,
       }),
+      [
+        "gkit --profile <app> site discover --out <new-directory> --sitemaps @urls.json --dry-run",
+      ],
     ),
     snapshot: command(
-      "gkit --profile <app> site snapshot --build .output --revision <sha-or-tag> --context <runtime-input-label> --out <new-directory>. Or --http for production observations. Writes manifest.json, pages.jsonl and content/; --dry-run is offline.",
+      "Write manifest.json, pages.jsonl and content/ from a build output or production observations. Exactly one of --build, --http.",
       v.strictObject({
-        build: v.optional(v.string()),
-        http: v.optional(v.boolean()),
-        revision: v.optional(v.string()),
-        repo: v.optional(v.string()),
-        routes: v.optional(v.string()),
-        context: v.string(),
-        out: v.string(),
-        dryRun: v.optional(v.boolean()),
+        build: v.optional(text("Build output directory; needs --revision")),
+        http: v.optional(flag("Observe production over HTTP instead of a build")),
+        revision: v.optional(text("Commit or tag the build came from")),
+        repo: v.optional(text("Checkout for --revision")),
+        routes: v.optional(text("Routes file from `site discover`")),
+        context: text("Runtime-input label"),
+        out: text("New directory"),
+        "dry-run": dryRun,
       }),
+      [
+        "gkit --profile <app> site snapshot --build .output --revision <sha-or-tag> --context <label> --out <new-directory>",
+      ],
     ),
     audit: command(
-      "gkit site audit <snapshot-directory> [--rules @rules.json] [--out report.json]. Offline; leaves the snapshot unchanged.",
-      v.strictObject({ snapshot: v.string(), ...output }),
+      "Audit a snapshot offline; leaves it unchanged.",
+      v.strictObject({ snapshot: snapshot("snapshot directory"), ...output }),
+      ["gkit site audit <snapshot-directory> --rules @rules.json --out report.json"],
     ),
     diff: command(
-      "gkit site diff <base-snapshot> <head-snapshot> [--rules @rules.json] [--out diff.json]. Offline page and audit comparison.",
-      v.strictObject({ base: v.string(), head: v.string(), ...output }),
+      "Compare two snapshots offline: pages and audit results.",
+      v.strictObject({
+        base: snapshot("base snapshot"),
+        head: snapshot("head snapshot"),
+        ...output,
+      }),
+      ["gkit site diff <base-snapshot> <head-snapshot> --out diff.json"],
     ),
     explain: command(
-      "gkit --profile <app> site explain <base-snapshot> <head-snapshot> --model <grok-model> --out explanation.json [--repo <checkout>] [--dry-run]. Reads exact Git trees and invokes host Grok CLI; --dry-run writes the bounded model input without invoking Grok. Successful results cached under the selected profile.",
+      "Explain a diff with the host Grok CLI over exact Git trees; --dry-run writes the bounded model input without invoking it. Results are cached under the profile.",
       v.strictObject({
-        base: v.string(),
-        head: v.string(),
-        model: v.string(),
-        repo: v.optional(v.string()),
-        out: v.string(),
-        dryRun: v.optional(v.boolean()),
+        base: snapshot("base snapshot"),
+        head: snapshot("head snapshot"),
+        model: text("Grok model id"),
+        repo: v.optional(text("Checkout holding both revisions")),
+        out: text("Explanation file"),
+        "dry-run": dryRun,
       }),
+      [
+        "gkit --profile <app> site explain <base-snapshot> <head-snapshot> --model <grok-model> --out explanation.json",
+      ],
     ),
   },
 );

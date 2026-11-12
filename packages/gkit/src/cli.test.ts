@@ -34,7 +34,7 @@ describe("gkit process contract", () => {
     expect(result.stdout).toContain("gkit --profile <app> hubspot api call");
     expect(result.stdout).toContain("### pagespeed.api.call");
     expect(result.stdout).not.toContain("pagespeed.doctor");
-    expect(result.stdout).toContain("gkit describe --id <capability-id>");
+    expect(result.stdout).toContain("### describe");
     expect(result.stdout).toContain("argc dotted commands are intentionally not exposed");
     expect(result.stdout).not.toContain("gkit dataforseo.api.call");
     expect(result.stdout).not.toContain("gkit google-ads.api.call");
@@ -56,6 +56,31 @@ describe("gkit process contract", () => {
     expect(hubspot.exitCode).toBe(0);
     expect(hubspot.stdout).toContain("### hubspot.api.call");
     expect(hubspot.stdout).not.toContain("posthog");
+  });
+
+  it("prints its package version and serves the site reference through @skill", async () => {
+    const fixture = await createCliFixture();
+    const { version } = (await import("../package.json", { with: { type: "json" } })).default;
+    const result = await runCli(["--version"], fixture.env);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe(`${version}\n`);
+
+    const reference = await runCli(["@skill", "references/site.md"], fixture.env);
+    expect(reference.exitCode).toBe(0);
+    expect(reference.stdout).toContain("SiteSnapshot CLI");
+  });
+
+  it("lists capability ids and parser-spelled flags in a provider slice", async () => {
+    const fixture = await createCliFixture();
+    const gsc = await runCli(["--schema", "gsc"], fixture.env);
+    expect(gsc.stdout).toContain('"gsc.sitemaps.submit"');
+    expect(gsc.stdout).toContain('"capability-id"');
+    expect(gsc.stdout).toContain('"allow-write"?: boolean');
+    expect(gsc.stdout).toContain('"dry-run"?: boolean');
+
+    const reconcile = await runCli(["--schema", "operations"], fixture.env);
+    expect(reconcile.stdout).toContain('"evidence-ref": string');
+    expect(reconcile.stdout).not.toContain("evidenceRef");
   });
 
   it("dispatches HubSpot through the common api call envelope and artifact contract", async () => {
