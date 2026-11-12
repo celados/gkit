@@ -66,3 +66,19 @@ current implementation scope and must not be pulled into the first slice.
 
 Use [CONTEXT.md](./CONTEXT.md) for current canonical language and
 [docs/adr](./docs/adr) for accepted architectural decisions.
+
+## Local install after every change
+
+On the user's machines `gkit` is the release bundle in `~/.local/bin`,
+installed by the workspace `update-local-tool` skill. A change is not done when
+it merges or releases. It is done when the user's local `gkit` runs it. The
+user does not watch for this, so do it without being asked:
+
+1. After the release workflow for your change succeeds, check whether the tool is
+   installed: `command -v gkit`. If it is not, stop here.
+2. Run `bash ~/workspace/.agents/skills/update-local-tool/update.sh gkit`. It prints `before -> after`.
+3. Check your change with the installed binary, for example `gkit @schema` or the
+   command you changed.
+4. Put the `before -> after` line in your final report.
+
+If the release failed, report that. Don't install a local build in its place.
