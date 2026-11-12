@@ -4,6 +4,7 @@ import { GkitFailure } from "./envelope";
 export type ParsedCommand =
   | SiteCommand
   | { kind: "help" }
+  | { kind: "version" }
   | { kind: "schema"; selector: string | null }
   | { kind: "skill"; path: string | null }
   | { kind: "describe"; id: string }
@@ -182,6 +183,11 @@ export function parseArgs(argv: string[]): ParsedCommand {
     return { kind: "help" };
   }
 
+  if (rest[0] === "--version") {
+    if (profileFlag || rest.length > 1) invalid("--version takes no other arguments.");
+    return { kind: "version" };
+  }
+
   if (rest[0] === "--schema" || rest[0]!.startsWith("--schema=")) {
     if (profileFlag) invalid("--schema does not load a profile.");
     const first = rest[0]!;
@@ -219,7 +225,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
 
   if (rest[0] === "operations") {
     if (profileFlag) invalid("operations commands do not load a profile.");
-    if (rest.length === 1 || rest[1] === "list") {
+    if (rest.length === 1 || rest[1] === "list" || rest[1]!.startsWith("--")) {
       const flags = parseFlags(rest.slice(rest[1] === "list" ? 2 : 1), new Set());
       requireOnly(flags, ["--limit"]);
       const limitText = optionalString(flags, "--limit") ?? "20";
@@ -377,6 +383,7 @@ export function renderHelp(): string {
     "Discovery:",
     "  gkit --schema [selector]",
     "  gkit @skill [path]",
+    "  gkit --version",
     "  gkit describe --id <capability-id>",
     "  gkit docs [--provider <provider>]",
     "",
