@@ -10,6 +10,7 @@ const s = toStandardJsonSchema;
 
 export function buildGkitSchema(
   manifest: LoadedExecutableManifest | readonly LoadedExecutableManifest[],
+  { compact = false }: { compact?: boolean } = {},
 ): Router {
   const manifests = Array.isArray(manifest) ? manifest : [manifest];
   const capabilities = manifests.flatMap((candidate) => candidate.document.capabilities);
@@ -38,40 +39,63 @@ export function buildGkitSchema(
     });
   }
 
+  const provider = (description: string, doctorProfile: string, name: string, callFlags: string) =>
+    group(
+      { description },
+      {
+        ...(compact
+          ? {}
+          : {
+              doctor: c
+                .meta({
+                  description: "Profile check.",
+                  examples: [`gkit --profile ${doctorProfile} ${name} doctor`],
+                })
+                .input(s(v.strictObject({}))),
+            }),
+        api: group(
+          {},
+          {
+            call: c
+              .meta({
+                description: "Call a reviewed capability.",
+                examples: [
+                  `gkit --profile <app> ${name} api call ${callFlags} --out <path> --dry-run`,
+                ],
+              })
+              .input(s(v.strictObject({}))),
+          },
+        ),
+      },
+    );
+  const idFlags = "--capability-id <id> --input @request.json";
+
   return {
     site: siteRouter,
     describe: c
       .meta({
         description: "Capability details.",
-        examples: ["gkit describe --id dataforseo.backlinks.bulk_ranks.live"],
+        examples: ["gkit describe --id <capability-id>"],
       })
       .input(s(v.strictObject({ id: v.string() }))),
     docs: c
       .meta({
         description: "Provider docs directory.",
-        examples: ["gkit docs --provider dataforseo"],
+        examples: ["gkit docs --provider <provider>"],
       })
       .input(s(v.strictObject({ provider: v.optional(v.string()) }))),
     operations: group(
       { description: "Journal." },
       {
-        list: c
-          .meta({
-            description: "Summary.",
-            examples: ["gkit operations"],
-          })
-          .input(s(v.strictObject({}))),
+        list: c.meta({ description: "Summary." }).input(s(v.strictObject({}))),
         show: c
-          .meta({
-            description: "One operation.",
-            examples: ["gkit operations show --id <operation-id>"],
-          })
+          .meta({ description: "One operation." })
           .input(s(v.strictObject({ id: v.string() }))),
         reconcile: c
           .meta({
             description: "Manual settlement.",
             examples: [
-              "gkit operations reconcile --id <operation-id> --result succeeded --evidence-ref ticket:123",
+              "gkit operations reconcile --id <operation-id> [--result <result>] [--spend-outcome <outcome> [--cost-usd <decimal>]] --evidence-ref <ref>",
             ],
           })
           .input(
@@ -79,7 +103,9 @@ export function buildGkitSchema(
               v.strictObject({
                 id: v.string(),
                 result: v.optional(v.picklist(["succeeded", "failed", "not_dispatched"])),
-                spendOutcome: v.optional(v.picklist(["confirmed_charged", "confirmed_not_charged"])),
+                spendOutcome: v.optional(
+                  v.picklist(["confirmed_charged", "confirmed_not_charged"]),
+                ),
                 evidenceRef: v.string(),
                 costUsd: v.optional(v.string()),
                 providerRequestId: v.optional(v.string()),
@@ -88,174 +114,37 @@ export function buildGkitSchema(
           ),
       },
     ),
-    dataforseo: group(
-      { description: `${dataForSeoCapabilityCount} reviewed reads.` },
-      {
-        doctor: c
-          .meta({
-            description: "Profile check.",
-            examples: ["gkit --profile app-a dataforseo doctor"],
-          })
-          .input(s(v.strictObject({}))),
-        api: group(
-          { description: "Native API." },
-          {
-            call: c
-              .meta({
-                description: "gkit --profile <app> dataforseo api call --capability-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run.",
-                examples: [
-                  "gkit --profile <app> dataforseo api call --capability-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run",
-                ],
-              })
-              .input(s(v.strictObject({}))),
-          },
-        ),
-      },
+    dataforseo: provider(
+      `${dataForSeoCapabilityCount} reviewed reads.`,
+      "app-a",
+      "dataforseo",
+      `${idFlags} --allow-spend --max-spend-usd <decimal>`,
     ),
-    bing: group(
-      { description: `${bingCapabilityCount} reviewed reads.` },
-      {
-        doctor: c
-          .meta({
-            description: "Profile check.",
-            examples: ["gkit --profile app-a bing doctor"],
-          })
-          .input(s(v.strictObject({}))),
-        api: group(
-          { description: "Native API." },
-          {
-            call: c
-              .meta({
-                description: "gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path> --dry-run.",
-                examples: [
-                  "gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path> --dry-run",
-                ],
-              })
-              .input(s(v.strictObject({}))),
-          },
-        ),
-      },
+    bing: provider(`${bingCapabilityCount} reviewed reads.`, "app-a", "bing", idFlags),
+    posthog: provider(
+      "1 reviewed read.",
+      "app-a",
+      "posthog",
+      "--capability-id posthog.query.run --input @request.json",
     ),
-    posthog: group(
-      { description: "1 reviewed read." },
-      {
-        doctor: c
-          .meta({
-            description: "Profile check.",
-            examples: ["gkit --profile app-a posthog doctor"],
-          })
-          .input(s(v.strictObject({}))),
-        api: group(
-          { description: "Native API." },
-          {
-            call: c
-              .meta({
-                description:
-                  "gkit --profile <app> posthog api call --capability-id posthog.query.run --input @request.json --out <path> --dry-run.",
-                examples: [
-                  "gkit --profile <app> posthog api call --capability-id posthog.query.run --input @request.json --out <path> --dry-run",
-                ],
-              })
-              .input(s(v.strictObject({}))),
-          },
-        ),
-      },
+    "google-ads": provider(
+      `${googleAdsCapabilityCount} reviewed reads.`,
+      "openclaw-web",
+      "google-ads",
+      idFlags,
     ),
-    "google-ads": group(
-      { description: `${googleAdsCapabilityCount} reviewed reads.` },
-      {
-        doctor: c
-          .meta({
-            description: "Profile check.",
-            examples: ["gkit --profile openclaw-web google-ads doctor"],
-          })
-          .input(s(v.strictObject({}))),
-        api: group(
-          { description: "Native API." },
-          {
-            call: c
-              .meta({
-                description: "gkit --profile <app> google-ads api call --capability-id <id> --input @request.json --out <path> --dry-run.",
-                examples: [
-                  "gkit --profile <app> google-ads api call --capability-id <id> --input @request.json --out <path> --dry-run",
-                ],
-              })
-              .input(s(v.strictObject({}))),
-          },
-        ),
-      },
+    gsc: provider(
+      `${gscCapabilityCount} reviewed capabilities; writes need --allow-write.`,
+      "openclaw-web",
+      "gsc",
+      idFlags,
     ),
-    gsc: group(
-      { description: `${gscCapabilityCount} reviewed capabilities; writes need --allow-write.` },
-      {
-        doctor: c
-          .meta({
-            description: "Profile check.",
-            examples: ["gkit --profile openclaw-web gsc doctor"],
-          })
-          .input(s(v.strictObject({}))),
-        api: group(
-          { description: "Native API." },
-          {
-            call: c
-              .meta({
-                description: "gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path> --dry-run.",
-                examples: [
-                  "gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path> --dry-run",
-                ],
-              })
-              .input(s(v.strictObject({}))),
-          },
-        ),
-      },
-    ),
-    hubspot: group(
-      { description: `${hubSpotCapabilityCount} reviewed reads.` },
-      {
-        doctor: c
-          .meta({
-            description: "Profile check.",
-            examples: ["gkit --profile app-a hubspot doctor"],
-          })
-          .input(s(v.strictObject({}))),
-        api: group(
-          { description: "Native API." },
-          {
-            call: c
-              .meta({
-                description: "gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path> --dry-run.",
-                examples: [
-                  "gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path> --dry-run",
-                ],
-              })
-              .input(s(v.strictObject({}))),
-          },
-        ),
-      },
-    ),
-    pagespeed: group(
-      { description: `${pageSpeedCapabilityCount} reviewed reads.` },
-      {
-        doctor: c
-          .meta({
-            description: "Profile check.",
-            examples: ["gkit --profile app-a pagespeed doctor"],
-          })
-          .input(s(v.strictObject({}))),
-        api: group(
-          { description: "Native API." },
-          {
-            call: c
-              .meta({
-                description: "Call pagespeed.run.",
-                examples: [
-                  "gkit --profile <app> pagespeed api call --capability-id pagespeed.run --input @request.json --out <path> --dry-run",
-                ],
-              })
-              .input(s(v.strictObject({}))),
-          },
-        ),
-      },
+    hubspot: provider(`${hubSpotCapabilityCount} reviewed reads.`, "app-a", "hubspot", idFlags),
+    pagespeed: provider(
+      `${pageSpeedCapabilityCount} reviewed reads.`,
+      "app-a",
+      "pagespeed",
+      "--capability-id pagespeed.run --input @request.json",
     ),
   };
 }
@@ -264,19 +153,17 @@ export function renderGkitSchema(
   manifest: LoadedExecutableManifest | readonly LoadedExecutableManifest[],
   selector: string | null,
 ): string {
-  const root = buildGkitSchema(manifest);
   if (!selector) {
-    const compactRoot = Object.fromEntries(
-      Object.entries(root).filter(([name]) => name !== "site"),
-    );
-    return `${schemaPreamble()}${compactRootSchema(
-      rewriteArgcExamples(generateSchema(compactRoot, { name: "gkit" }), manifest).replace(
-        "type Gkit = {",
-        "type Gkit = {\n  /** gkit --schema site */\n  site: {}",
+    // Root view: the dispatcher shape without `site` (own selector) and doctor noise.
+    const rest = Object.fromEntries(
+      Object.entries(buildGkitSchema(manifest, { compact: true })).filter(
+        ([name]) => name !== "site",
       ),
-    )}\n`;
+    );
+    return `${schemaPreamble()}${generateSchema(rest, { name: "gkit" })}\n`;
   }
 
+  const root = buildGkitSchema(manifest);
   let selected: ReturnType<typeof selectSchema>;
   try {
     const normalizedSelector =
@@ -298,91 +185,9 @@ export function renderGkitSchema(
       message: `Schema selector ${selector} matched no commands.`,
     });
   }
-  return `${schemaPreamble()}${rewriteArgcExamples(
-    generateSchema(selected.schema, { name: "gkit" }),
-    manifest,
-  )}\n`;
+  return `${schemaPreamble()}${generateSchema(selected.schema, { name: "gkit" })}\n`;
 }
 
 function schemaPreamble(): string {
-  return "/** argc dotted commands are intentionally not exposed. */\n";
-}
-
-function compactRootSchema(generated: string): string {
-  return (
-    generated
-      // argc 7.6+ promotes authored examples into JSDoc blocks. Keep the 7.5
-      // public surface: drop doctor noise, collapse everything else that is
-      // not describe / docs.
-      .replace(
-        /\n[ \t]*\/\*\*\n[ \t]*\* Profile check\.\n(?:[ \t]*\*\n[ \t]*\* @example\n(?:[ \t]*\* .+\n)+)?[ \t]*\*\/\n/g,
-        "\n",
-      )
-      .replace(
-        /^([ \t]*)\/\*\*\n[ \t]*\* ([^\n]+)\n[ \t]*\*\n[ \t]*\* @example\n(?:[ \t]*\* .+\n)+[ \t]*\*\//gm,
-        (block, indent: string, description: string) => {
-          if (
-            description.startsWith("Capability details.") ||
-            description.startsWith("Provider docs directory.")
-          ) {
-            return block;
-          }
-          return `${indent}/** ${description} */`;
-        },
-      )
-      .replace(
-        /^\s*\/\*\* (?:\d+ reviewed (?:reads?\.|capabilities; [^*\n]*)|Profile check\.|Native API\.) \*\/\n/gm,
-        "",
-      )
-      .replace(/\n{2,}/g, "\n")
-  );
-}
-
-function rewriteArgcExamples(
-  generated: string,
-  _manifest: LoadedExecutableManifest | readonly LoadedExecutableManifest[],
-): string {
-  return generated
-    .replace(/gkit describe "\{ id: 'value' \}"/g, "gkit describe --id <capability-id>")
-    .replace(/gkit describe --id \S+/g, "gkit describe --id <capability-id>")
-    .replace(/gkit docs "\{ provider: 'value' \}"/g, "gkit docs --provider <provider>")
-    .replace(/gkit docs --provider \S+/g, "gkit docs --provider <provider>")
-    .replace(
-      /gkit operations reconcile --id <operation-id> --result succeeded --evidence-ref ticket:123/g,
-      "gkit operations reconcile --id <operation-id> [--result <result>] [--spend-outcome <outcome> [--cost-usd <decimal>]] --evidence-ref <ref>",
-    )
-    .replace(
-      /gkit bing\.api\.call "[^"]*"/g,
-      "gkit --profile <app> bing api call --capability-id <id> --input @request.json --out <path> --dry-run",
-    )
-    .replace(
-      /gkit operations\.reconcile "[^"]*"/g,
-      "gkit operations reconcile --id <operation-id> [--result <result>] [--spend-outcome <outcome> [--cost-usd <decimal>]] --evidence-ref <ref>",
-    )
-    .replace(/gkit operations\.show "[^"]*"/g, "gkit operations show --id <operation-id>")
-    .replace(/gkit operations\.list "[^"]*"/g, "gkit operations")
-    .replace(
-      /gkit dataforseo\.api\.call "[^"]*"/g,
-      "gkit --profile <app> dataforseo api call --capability-id <id> --input @request.json --allow-spend --max-spend-usd <decimal> --out <path> --dry-run",
-    )
-    .replace(
-      /gkit posthog\.api\.call "[^"]*"/g,
-      "gkit --profile <app> posthog api call --capability-id posthog.query.run --input @request.json --out <path> --dry-run",
-    )
-    .replace(
-      /gkit google-ads\.api\.call "[^"]*"/g,
-      "gkit --profile <app> google-ads api call --capability-id <id> --input @request.json --out <path> --dry-run",
-    )
-    .replace(
-      /gkit gsc\.api\.call "[^"]*"/g,
-      "gkit --profile <app> gsc api call --capability-id <id> --input @request.json --out <path> --dry-run",
-    )
-    .replace(
-      /gkit pagespeed\.api\.call "[^"]*"/g,
-      "gkit --profile <app> pagespeed api call --capability-id pagespeed.run --input @request.json --out <path> --dry-run",
-    )
-    .replace(
-      /gkit hubspot\.api\.call "[^"]*"/g,
-      "gkit --profile <app> hubspot api call --capability-id <id> --input @request.json --out <path> --dry-run",
-    );
+  return "argc dotted commands are intentionally not exposed; run spaced commands with --flags. `gkit --schema site` lists the site commands.\n";
 }
