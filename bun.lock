@@ -14,12 +14,12 @@
     },
     "packages/gkit": {
       "name": "gkit",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "bin": {
         "gkit": "dist/gkit.js",
       },
       "devDependencies": {
-        "@celados/argc": "^10.0.0",
+        "@celados/argc": "^10.2.0",
         "@standard-schema/spec": "^1.0.0",
         "@types/bun": "^1.3.10",
         "@types/node": "^25.6.0",
@@ -39,7 +39,7 @@
     },
   },
   "catalog": {
-    "@celados/argc": "^10.0.0",
+    "@celados/argc": "^10.2.0",
     "@types/bun": "^1.3.10",
     "@types/node": "^25.6.0",
     "@valibot/to-json-schema": "^1.6.0",
@@ -54,7 +54,7 @@
     "yaml": "^2.9.0",
   },
   "packages": {
-    "@celados/argc": ["@celados/argc@10.0.0", "https://npm.celados.com/@celados/argc/-/@celados/argc-10.0.0.tgz", { "dependencies": { "yaml": "^2.9.1" }, "peerDependencies": { "@standard-schema/spec": "^1.0.0", "@valibot/to-json-schema": "^1.8.0", "valibot": "^1.5.0" } }, "sha512-5PyPq2Ix8iXx9iHg+NIej2o27TqaIWg4l0vxKijoOPMckqP3YU9QwjN+8J+QVqDZsBCSfCNOhzHU0kJXE5LRrg=="],
+    "@celados/argc": ["@celados/argc@10.2.0", "https://npm.celados.com/@celados/argc/-/@celados/argc-10.2.0.tgz", { "dependencies": { "yaml": "^2.9.1" }, "peerDependencies": { "@standard-schema/spec": "^1.0.0", "@valibot/to-json-schema": "^1.8.0", "valibot": "^1.5.0" } }, "sha512-cRjltgtnTDmM9WAUQ3Xgm/076R5qns6F+vkzmGxzOnZbY+HiPYAR2nXBsjSbWvBdsmi6gK/oe44NQHjXANBbQw=="],
 
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
