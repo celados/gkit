@@ -14,12 +14,12 @@
     },
     "packages/gkit": {
       "name": "gkit",
-      "version": "0.3.4",
+      "version": "0.3.6",
       "bin": {
         "gkit": "dist/gkit.js",
       },
       "devDependencies": {
-        "@celados/argc": "^9.0.0",
+        "@celados/argc": "^10.2.0",
         "@standard-schema/spec": "^1.0.0",
         "@types/bun": "^1.3.10",
         "@types/node": "^25.6.0",
@@ -39,7 +39,7 @@
     },
   },
   "catalog": {
-    "@celados/argc": "^9.0.0",
+    "@celados/argc": "^10.2.0",
     "@types/bun": "^1.3.10",
     "@types/node": "^25.6.0",
     "@valibot/to-json-schema": "^1.6.0",
@@ -54,7 +54,7 @@
     "yaml": "^2.9.0",
   },
   "packages": {
-    "@celados/argc": ["@celados/argc@9.0.0", "https://npm.celados.com/@celados/argc/-/@celados/argc-9.0.0.tgz", { "dependencies": { "yaml": "2.9.0" }, "peerDependencies": { "@standard-schema/spec": "^1.0.0" } }, "sha512-shfwtc+ZAyXBxtxPnG3CapcUL0c7sUJu+pbcQAe5e190lVmtyRBCG1+OCVLn9UgKvTx2g0x7fFlu9Y7jR6LPnQ=="],
+    "@celados/argc": ["@celados/argc@10.2.0", "https://npm.celados.com/@celados/argc/-/@celados/argc-10.2.0.tgz", { "dependencies": { "yaml": "^2.9.1" }, "peerDependencies": { "@standard-schema/spec": "^1.0.0", "@valibot/to-json-schema": "^1.8.0", "valibot": "^1.5.0" } }, "sha512-cRjltgtnTDmM9WAUQ3Xgm/076R5qns6F+vkzmGxzOnZbY+HiPYAR2nXBsjSbWvBdsmi6gK/oe44NQHjXANBbQw=="],
 
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
@@ -315,6 +315,8 @@
     "xmlchars": ["xmlchars@2.2.0", "", {}, "sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw=="],
 
     "yaml": ["yaml@2.9.0", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA=="],
+
+    "@celados/argc/yaml": ["yaml@2.9.1", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw=="],
 
     "htmlparser2/entities": ["entities@7.0.1", "", {}, "sha512-TWrgLOFUQTH994YUyl1yT4uyavY5nNB5muff+RtWaqNVCAK408b5ZnnbNAUEWLTCpum9w6arT70i1XdQ4UeOPA=="],
 

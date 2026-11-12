@@ -7,7 +7,10 @@ profiles, or publish to an npm registry — install from GitHub Release
 tarballs.
 
 gkit uses argc only to render the offline schema. The public dispatcher is
-spaced commands (`gkit gsc api call`), not argc dotted paths.
+spaced commands (`gkit gsc api call`), not argc dotted paths, and gkit parses
+its own flags: argc's whole-input forms (`-` stdin, YAML object, inline
+`'{…}'`) do not apply. `--input @request.json`, `--rules @rules.json` and
+similar are gkit's own file-reference flags and take JSON files.
 
 ## Discover Capabilities First
 
