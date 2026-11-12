@@ -1,65 +1,25 @@
 # gkit
 
-Profile-bound CLI for agent-first access to growth providers (DataForSEO,
-PostHog, Google Ads, Google Search Console, Bing Webmaster). One invocation
-binds exactly one App profile. It does not scaffold credentials, merge
-profiles, or publish to an npm registry — install from GitHub Release
-tarballs.
+Profile-bound CLI for agent-first access to growth providers (DataForSEO, PostHog, Google Ads, Google Search Console, Bing Webmaster, HubSpot, PageSpeed). One invocation binds exactly one App profile. It does not scaffold credentials, merge profiles or publish to an npm registry: install from GitHub Release tarballs. Preflight: `gkit --profile <app> <provider> doctor` fails closed on missing config or secrets, so run it before a live request.
 
-gkit uses argc only to render the offline schema. The public dispatcher is
-spaced commands (`gkit gsc api call`), not argc dotted paths, and gkit parses
-its own flags: argc's whole-input forms (`-` stdin, YAML object, inline
-`'{…}'`) do not apply. `--input @request.json`, `--rules @rules.json` and
-similar are gkit's own file-reference flags and take JSON files.
+Commands are spaced (`gkit gsc api call`), not argc dotted paths, and gkit parses its own flags: argc's whole-input forms (`-` stdin, YAML, inline `'{…}'`) don't apply. `--input @request.json` and `--rules @rules.json` are gkit's own file-reference flags and take JSON files.
 
-## Discover Capabilities First
+Read the section for your task, then only that slice: `gkit --schema gsc`, or `gkit --schema operations`. Discovery is offline and loads no profile or secrets; `gkit describe --id <capability-id>` and `gkit docs --provider <provider>` go deeper on one capability or provider.
 
-This skill is a recipe guide, not a complete capability list. Discovery is
-offline and does not load a profile or resolve secrets:
+## Profiles
 
-```bash
-gkit --schema
-gkit --schema gsc
-gkit describe --id gsc.search-analytics.query
-gkit docs --provider gsc
-```
+Create `$XDG_CONFIG_HOME/gkit/profiles/<app>.json` (or `~/.config/gkit/profiles/<app>.json`) with provider config and `env:NAME` secret references only; inject the real values at runtime. Tokens never go in the profile, repo or argv. `--profile` wins over `GKIT_PROFILE`. One profile per invocation: never merge two.
 
-## Core Workflow
+## Calling a provider — `gkit --schema <provider>`
 
-Create `$XDG_CONFIG_HOME/gkit/profiles/<app>.json` (or
-`~/.config/gkit/profiles/<app>.json`) with provider config and `env:` secret
-references only. Inject the real values at runtime. Then:
+Providers: dataforseo, bing, posthog, google-ads, gsc, hubspot, pagespeed.
 
-```bash
-gkit --profile my-app gsc doctor
-gkit --profile my-app gsc api call --capability-id gsc.properties.list --input @request.json --out result.json --dry-run
-```
+- Run a call with `--dry-run` first. The provider payload is a file, not stdout: pass `--out` and re-read it, because stdout is only an envelope. Default artifact behavior is no-replace; add `--force` only after reviewing the destination.
+- DataForSEO spend calls also need `--allow-spend` and `--max-spend-usd`.
+- Write capabilities (such as `gsc.sitemaps.submit`) need `--allow-write`, even on `--dry-run`. Add it only for a reviewed write after its dry-run, never to reads or by habit.
 
-`--profile` wins over `GKIT_PROFILE`. DataForSEO spend calls also need
-`--allow-spend` and `--max-spend-usd`. Write capabilities such as
-`gsc.sitemaps.submit` need `--allow-write`, including on `--dry-run`. Default artifact behavior is
-no-replace; add `--force` only after reviewing the destination.
+## Operation journal — `gkit --schema operations`
 
-## Operation Journal
+Every live call (not dry-runs, nor calls rejected before dispatch) is recorded in `$XDG_STATE_HOME/gkit/operations.jsonl` (or `~/.local/state/gkit/operations.jsonl`) and identified by `meta.operationId`. `operations list` shows a closed `state`: `succeeded` (provider success plus a recorded artifact), `failed`, `not_dispatched`, or `unknown` (the attempt crossed the provider seam without a confirmed result).
 
-Every live call (not dry-runs or calls rejected before dispatch) is recorded in
-`$XDG_STATE_HOME/gkit/operations.jsonl` (or `~/.local/state/gkit/operations.jsonl`)
-and identified by `meta.operationId`. `gkit operations` lists recent operations
-with a closed `state`: `succeeded` (provider success plus a recorded artifact),
-`failed`, `not_dispatched`, or `unknown` (the attempt crossed the provider seam
-without a confirmed result). Inspect one with `gkit operations show --id <id>`.
-An `unknown` result, or an unknown spend amount, changes only through
-`gkit operations reconcile --id <id> ... --evidence-ref <ref>` backed by provider
-evidence; a successful retry is a new operation, not evidence.
-
-## Anti-Patterns
-
-| Don't | Do | Why |
-| --- | --- | --- |
-| Call `gkit gsc.api.call` | Use spaced `gkit gsc api call` | argc's dispatcher is not the public surface |
-| Put tokens in the profile, repo, or argv | `env:NAME` references, inject at runtime | Profiles hold non-secret defaults |
-| Skip doctor before a live request | `gkit --profile <app> <provider> doctor` | Fail closed on missing config or secrets |
-| Pipe a provider payload into context | Persist with `--out` and re-read | stdout is an envelope; the bulk is a file |
-| Merge two App profiles in one process | One profile per invocation | Binding is exclusive |
-| Add `--allow-write` to reads or by habit | Only for a reviewed write after its dry-run | Writes change provider state |
-| Rerun after an `unknown` outcome | Reconcile it with provider evidence first | The first attempt may have taken effect |
+An `unknown` result, or an unknown spend amount, changes only through `operations reconcile --id <id> ... --evidence-ref <ref>` backed by provider evidence; a successful retry is a new operation, not evidence. So never rerun after `unknown` before reconciling: the first attempt may have taken effect.
