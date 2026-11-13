@@ -4,7 +4,7 @@ title: gkit Product Architecture Context
 description: The confirmed minimum product boundary and first vertical slice for gkit.
 status: active
 version: 0.4
-generated: { by: codex/gpt-5, at: "2026-08-14T14:39:07+08:00" }
+generated: { by: codex/gpt-5, at: '2026-08-14T14:39:07+08:00' }
 tags: [gkit, growth-workspace, agent-native]
 ---
 

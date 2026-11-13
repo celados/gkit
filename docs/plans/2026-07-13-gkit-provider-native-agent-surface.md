@@ -103,18 +103,18 @@ gkit --profile app-a bing sites list
 搜索结果必须区分 contract owner：
 
 ```ts
-type CapabilityKind = "curated" | "provider";
+type CapabilityKind = 'curated' | 'provider'
 
 type CapabilitySummary = {
-  id: string;
-  provider: string;
-  kind: CapabilityKind;
-  contractOwner: "gkit" | "provider";
-  description: string;
-  command: string;
-  schemaSelector: string;
-  effects: Effect[];
-};
+	id: string
+	provider: string
+	kind: CapabilityKind
+	contractOwner: 'gkit' | 'provider'
+	description: string
+	command: string
+	schemaSelector: string
+	effects: Effect[]
+}
 ```
 
 Curated command 是 gkit 承诺的稳定、normalized contract；provider capability 明确跟随 provider 版本和原生返回。
@@ -124,31 +124,31 @@ Curated command 是 gkit 承诺的稳定、normalized contract；provider capabi
 统一到 module interface 就停止：
 
 ```ts
-type Effect = "read" | "spend" | "write" | "destructive";
+type Effect = 'read' | 'spend' | 'write' | 'destructive'
 
 type ProviderModule = {
-  id: string;
-  description: string;
-  schema: CommandTree;
-  handlers: HandlerTree;
-  profileSchema: JsonSchema;
-  runtime: ProviderRuntime;
-  catalog: {
-    search(query: string, limit: number): Promise<CapabilitySummary[]>;
-    describe(id: string): Promise<CapabilityDescription>;
-  };
-  doctor(context: ProviderContext): Promise<DoctorReport>;
-};
+	id: string
+	description: string
+	schema: CommandTree
+	handlers: HandlerTree
+	profileSchema: JsonSchema
+	runtime: ProviderRuntime
+	catalog: {
+		search(query: string, limit: number): Promise<CapabilitySummary[]>
+		describe(id: string): Promise<CapabilityDescription>
+	}
+	doctor(context: ProviderContext): Promise<DoctorReport>
+}
 
 type ProviderRuntime =
-  | { kind: "in-process"; language: "typescript" }
-  | {
-      kind: "process";
-      language: "python" | "other";
-      protocol: "gkit-provider-v1";
-      setup: () => Promise<SetupReport>;
-      probe: () => Promise<RuntimeReport>;
-    };
+	| { kind: 'in-process'; language: 'typescript' }
+	| {
+			kind: 'process'
+			language: 'python' | 'other'
+			protocol: 'gkit-provider-v1'
+			setup: () => Promise<SetupReport>
+			probe: () => Promise<RuntimeReport>
+	  }
 ```
 
 `ProviderRuntime` 只统一进程边界，不统一 provider API。DataForSEO、GSC、PostHog 可以使用 TypeScript in-process adapter；Google Ads 使用官方 Python SDK subprocess。
@@ -195,25 +195,25 @@ Core 不拥有：
 Profile 是真实业务维度：它回答“这次调用代表哪个 App，以及该 App 在每个 provider 中对应哪个 account/resource”。
 
 ```ts
-type SecretRef = `env:${string}`;
+type SecretRef = `env:${string}`
 
 type GkitProfile = {
-  version: 1;
-  name: string;
-  providers: Record<
-    string,
-    {
-      config: Record<string, unknown>;
-      secrets: Record<string, SecretRef>;
-    }
-  >;
-};
+	version: 1
+	name: string
+	providers: Record<
+		string,
+		{
+			config: Record<string, unknown>
+			secrets: Record<string, SecretRef>
+		}
+	>
+}
 
 type ProviderContext = {
-  profile: string;
-  config: Record<string, unknown>;
-  resolveSecret(name: string): string;
-};
+	profile: string
+	config: Record<string, unknown>
+	resolveSecret(name: string): string
+}
 ```
 
 Profile 文件位于：
@@ -227,37 +227,37 @@ $XDG_CONFIG_HOME/gkit/profiles/<name>.json  # XDG_CONFIG_HOME 已设置
 
 ```json
 {
-  "version": 1,
-  "name": "app-a",
-  "providers": {
-    "posthog": {
-      "config": {
-        "host": "https://us.posthog.com",
-        "projectId": "12345"
-      },
-      "secrets": {
-        "apiToken": "env:APP_A_POSTHOG_TOKEN"
-      }
-    },
-    "gsc": {
-      "config": {
-        "siteUrl": "sc-domain:app-a.com"
-      },
-      "secrets": {
-        "credentialsJson": "env:APP_A_GSC_CREDENTIALS_JSON"
-      }
-    },
-    "google-ads": {
-      "config": {
-        "customerId": "1234567890",
-        "loginCustomerId": "0987654321"
-      },
-      "secrets": {
-        "developerToken": "env:APP_A_GOOGLE_ADS_DEVELOPER_TOKEN",
-        "credentialsJson": "env:APP_A_GOOGLE_ADS_CREDENTIALS_JSON"
-      }
-    }
-  }
+	"version": 1,
+	"name": "app-a",
+	"providers": {
+		"posthog": {
+			"config": {
+				"host": "https://us.posthog.com",
+				"projectId": "12345"
+			},
+			"secrets": {
+				"apiToken": "env:APP_A_POSTHOG_TOKEN"
+			}
+		},
+		"gsc": {
+			"config": {
+				"siteUrl": "sc-domain:app-a.com"
+			},
+			"secrets": {
+				"credentialsJson": "env:APP_A_GSC_CREDENTIALS_JSON"
+			}
+		},
+		"google-ads": {
+			"config": {
+				"customerId": "1234567890",
+				"loginCustomerId": "0987654321"
+			},
+			"secrets": {
+				"developerToken": "env:APP_A_GOOGLE_ADS_DEVELOPER_TOKEN",
+				"credentialsJson": "env:APP_A_GOOGLE_ADS_CREDENTIALS_JSON"
+			}
+		}
+	}
 }
 ```
 
@@ -294,13 +294,13 @@ Effect 必须由 provider module 显式标注；生成器只能提供候选，�
 
 ## 3. Provider 映射
 
-| Provider | Discovery source | Native execution | Curated 的角色 |
-|---|---|---|---|
-| DataForSEO | 官方 OpenAPI | operation ID + native JSON input | 高频 SEO/GEO reads 的稳定 contract |
-| GSC | Google Discovery | resource/method call | 常用 Search Analytics、Inspection 等默认值与输出 |
-| Google Ads | 官方 Python SDK + field metadata | GAQL；未来 SDK service methods | 常用 performance、Keyword Planner reads |
-| PostHog | instance/OpenAPI + query kinds | HogQL/query；read API | 常用 event/funnel/instrumentation reads |
-| Bing Webmaster | WSDL/interface inventory | provider method + native input | 常用 site/traffic/crawl/link reads |
+| Provider       | Discovery source                 | Native execution                 | Curated 的角色                                   |
+| -------------- | -------------------------------- | -------------------------------- | ------------------------------------------------ |
+| DataForSEO     | 官方 OpenAPI                     | operation ID + native JSON input | 高频 SEO/GEO reads 的稳定 contract               |
+| GSC            | Google Discovery                 | resource/method call             | 常用 Search Analytics、Inspection 等默认值与输出 |
+| Google Ads     | 官方 Python SDK + field metadata | GAQL；未来 SDK service methods   | 常用 performance、Keyword Planner reads          |
+| PostHog        | instance/OpenAPI + query kinds   | HogQL/query；read API            | 常用 event/funnel/instrumentation reads          |
+| Bing Webmaster | WSDL/interface inventory         | provider method + native input   | 常用 site/traffic/crawl/link reads               |
 
 ### DataForSEO
 
@@ -348,18 +348,18 @@ Discovery methods 可以生成 provider capabilities；read 与 write scope 分�
 
 ```json
 {
-  "ok": true,
-  "data": {},
-  "meta": {
-    "profile": "app-a",
-    "provider": "dataforseo",
-    "capability": "dataforseo.backlinks.bulk_ranks.live",
-    "kind": "provider",
-    "effects": ["read", "spend"],
-    "requestId": "optional",
-    "cost": {"amount": 0.02, "currency": "USD"},
-    "artifact": null
-  }
+	"ok": true,
+	"data": {},
+	"meta": {
+		"profile": "app-a",
+		"provider": "dataforseo",
+		"capability": "dataforseo.backlinks.bulk_ranks.live",
+		"kind": "provider",
+		"effects": ["read", "spend"],
+		"requestId": "optional",
+		"cost": { "amount": 0.02, "currency": "USD" },
+		"artifact": null
+	}
 }
 ```
 
@@ -367,14 +367,14 @@ Discovery methods 可以生成 provider capabilities；read 与 write scope 分�
 
 ```json
 {
-  "ok": false,
-  "error": {
-    "code": "EFFECT_NOT_ALLOWED",
-    "message": "This capability can spend provider credits.",
-    "hint": "Review the request, then rerun with --allow-spend.",
-    "retryable": false,
-    "providerCode": null
-  }
+	"ok": false,
+	"error": {
+		"code": "EFFECT_NOT_ALLOWED",
+		"message": "This capability can spend provider credits.",
+		"hint": "Review the request, then rerun with --allow-spend.",
+		"retryable": false,
+		"providerCode": null
+	}
 }
 ```
 
@@ -415,14 +415,14 @@ Provider 原始错误保留在 `details`，不伪装成统一业务错误。
 
 ### Polyglot runtime failure modes
 
-| Failure | Result | Required handling |
-|---|---|---|
-| Provider runtime 未安装 | 仅该 provider blocked | doctor 返回 setup command；root discovery 继续工作 |
-| SDK/API version 不兼容 | 仅该 provider blocked | setup/doctor 校验 compatibility manifest，不尝试降级猜测 |
-| Child process hang | 当前调用失败 | timeout 后终止整个 process group，返回 retryable runtime error |
-| stdout 非法或过大 | 当前调用失败 | 拒绝解析并保留截断后的非敏感诊断 |
-| stderr 包含敏感值 | 安全失败 | 输出前经过已解析 secret redaction，测试覆盖异常路径 |
-| Python provider crash | 当前调用失败 | 非零 exit 映射为 provider runtime error，不影响其他 modules |
+| Failure                 | Result                | Required handling                                              |
+| ----------------------- | --------------------- | -------------------------------------------------------------- |
+| Provider runtime 未安装 | 仅该 provider blocked | doctor 返回 setup command；root discovery 继续工作             |
+| SDK/API version 不兼容  | 仅该 provider blocked | setup/doctor 校验 compatibility manifest，不尝试降级猜测       |
+| Child process hang      | 当前调用失败          | timeout 后终止整个 process group，返回 retryable runtime error |
+| stdout 非法或过大       | 当前调用失败          | 拒绝解析并保留截断后的非敏感诊断                               |
+| stderr 包含敏感值       | 安全失败              | 输出前经过已解析 secret redaction，测试覆盖异常路径            |
+| Python provider crash   | 当前调用失败          | 非零 exit 映射为 provider runtime error，不影响其他 modules    |
 
 ## 6. ADR-001: 选择一个 public binary + polyglot provider-owned execution
 
@@ -479,11 +479,11 @@ Provider 原始错误保留在 `details`，不伪装成统一业务错误。
 **Step 1: 写失败测试**
 
 ```ts
-expect(run(["--schema"]).stdout).toContain("search");
-expect(run(["--schema"]).stdout).toContain("describe");
-expect(run(["--schema"]).stdout).toContain("profile");
-expect(run(["--schema"]).stdout).toContain("dataforseo");
-expect(run(["--schema=.dataforseo"]).stdout).not.toContain("posthog");
+expect(run(['--schema']).stdout).toContain('search')
+expect(run(['--schema']).stdout).toContain('describe')
+expect(run(['--schema']).stdout).toContain('profile')
+expect(run(['--schema']).stdout).toContain('dataforseo')
+expect(run(['--schema=.dataforseo']).stdout).not.toContain('posthog')
 ```
 
 **Step 2: 建立 root contract**
@@ -492,8 +492,8 @@ Root package identity 固定为：
 
 ```json
 {
-  "name": "@deniffer/gkit",
-  "bin": {"gkit": "bin/gkit.js"}
+	"name": "@deniffer/gkit",
+	"bin": { "gkit": "bin/gkit.js" }
 }
 ```
 
@@ -553,9 +553,9 @@ git commit -m "feat: establish single gkit runtime"
 **Tests:**
 
 ```ts
-expect(search("campaign performance")[0].kind).toBe("curated");
-expect(describe(id).command).toMatch(/^gkit google-ads /);
-expect(() => describe("missing")).toThrowError("CAPABILITY_NOT_FOUND");
+expect(search('campaign performance')[0].kind).toBe('curated')
+expect(describe(id).command).toMatch(/^gkit google-ads /)
+expect(() => describe('missing')).toThrowError('CAPABILITY_NOT_FOUND')
 ```
 
 ```bash
@@ -663,15 +663,15 @@ git commit -m "feat: enforce gkit execution policy"
 
 ```ts
 type ProviderProcessRequest = {
-  version: 1;
-  command: string;
-  input: unknown;
-  context: { profile: string; config: Record<string, unknown> };
-};
+	version: 1
+	command: string
+	input: unknown
+	context: { profile: string; config: Record<string, unknown> }
+}
 
 type ProviderProcessResponse =
-  | { ok: true; data: unknown; meta?: Record<string, unknown> }
-  | { ok: false; error: ProviderError };
+	| { ok: true; data: unknown; meta?: Record<string, unknown> }
+	| { ok: false; error: ProviderError }
 ```
 
 Secret value 不属于 request type。Provider-owned environment mapper 从 `ProviderContext.resolveSecret()` 构造 allowlisted child env；不继承完整 parent environment。

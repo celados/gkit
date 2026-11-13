@@ -35,11 +35,11 @@ the active profile hard cap of `$0.03` per call.
 
 ## Live gates
 
-| Capability | Requested bound | Actual cost | Provider result | Artifact |
-| --- | ---: | ---: | --- | --- |
-| `dataforseo.backlinks.summary.live` | `$0.024036` | `$0.024036` | one summary result | 2,846 bytes, SHA-256 `061c05629f2a5857e52899caf9c96c8b029598990274116a4ae4bd4253564463` |
-| `dataforseo.backlinks.referring_domains.live` | `$0.024072` | `$0.024036` | requested limit 2, returned 1 row | 2,921 bytes, SHA-256 `d1e83a6f24b9bfdb4f36b6398ecdbe960a58c45337e47c5f0dc4f451d19d223b` |
-| `dataforseo.serp.google.organic.live.advanced` | `$0.002000` | `$0.002000` | one page, 11 SERP elements | 25,043 bytes, SHA-256 `f557cc9f963a888d47f8d4ac333fef873ed71f955290f90f9f06227aba26e6cb` |
+| Capability                                     | Requested bound | Actual cost | Provider result                   | Artifact                                                                                 |
+| ---------------------------------------------- | --------------: | ----------: | --------------------------------- | ---------------------------------------------------------------------------------------- |
+| `dataforseo.backlinks.summary.live`            |     `$0.024036` | `$0.024036` | one summary result                | 2,846 bytes, SHA-256 `061c05629f2a5857e52899caf9c96c8b029598990274116a4ae4bd4253564463`  |
+| `dataforseo.backlinks.referring_domains.live`  |     `$0.024072` | `$0.024036` | requested limit 2, returned 1 row | 2,921 bytes, SHA-256 `d1e83a6f24b9bfdb4f36b6398ecdbe960a58c45337e47c5f0dc4f451d19d223b`  |
+| `dataforseo.serp.google.organic.live.advanced` |     `$0.002000` | `$0.002000` | one page, 11 SERP elements        | 25,043 bytes, SHA-256 `f557cc9f963a888d47f8d4ac333fef873ed71f955290f90f9f06227aba26e6cb` |
 
 Actual Slice 2 live cost was `$0.050072`, below the `$0.050108` aggregate
 authorization bound. Every call succeeded on its first dispatch.

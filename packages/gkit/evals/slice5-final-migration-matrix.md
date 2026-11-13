@@ -29,25 +29,25 @@ replaced. Their final transformation is deterministic:
 
 ## Provider packages
 
-| Deleted package | Replace | Final drop | Evidence |
-| --- | ---: | ---: | --- |
-| `@deniffer/backlink-cli` | 3 | 4 | [`dataforseo-migration-matrix.md`](./dataforseo-migration-matrix.md) |
-| `@deniffer/serp-snapshot-cli` | 2 | 1 | [`dataforseo-migration-matrix.md`](./dataforseo-migration-matrix.md) |
-| `@deniffer/ai-optimization-cli` | 1 | 9 | [`dataforseo-migration-matrix.md`](./dataforseo-migration-matrix.md) |
-| `@deniffer/posthog-cli` | 1 | 12 | [`posthog-migration-matrix.md`](./posthog-migration-matrix.md) |
-| `@deniffer/google-ads-cli` | 4 | 6 | [`google-ads-migration-matrix.md`](./google-ads-migration-matrix.md) |
-| `@deniffer/gsc-cli` | 5 | 4 | [`gsc-migration-matrix.md`](./gsc-migration-matrix.md) |
-| `@deniffer/bing-webmaster-cli` | 17 | 1 | [`bing-migration-matrix.md`](./bing-migration-matrix.md) |
-| **Provider total** | **33** | **37** | all seven packages deleted |
+| Deleted package                 | Replace | Final drop | Evidence                                                             |
+| ------------------------------- | ------: | ---------: | -------------------------------------------------------------------- |
+| `@deniffer/backlink-cli`        |       3 |          4 | [`dataforseo-migration-matrix.md`](./dataforseo-migration-matrix.md) |
+| `@deniffer/serp-snapshot-cli`   |       2 |          1 | [`dataforseo-migration-matrix.md`](./dataforseo-migration-matrix.md) |
+| `@deniffer/ai-optimization-cli` |       1 |          9 | [`dataforseo-migration-matrix.md`](./dataforseo-migration-matrix.md) |
+| `@deniffer/posthog-cli`         |       1 |         12 | [`posthog-migration-matrix.md`](./posthog-migration-matrix.md)       |
+| `@deniffer/google-ads-cli`      |       4 |          6 | [`google-ads-migration-matrix.md`](./google-ads-migration-matrix.md) |
+| `@deniffer/gsc-cli`             |       5 |          4 | [`gsc-migration-matrix.md`](./gsc-migration-matrix.md)               |
+| `@deniffer/bing-webmaster-cli`  |      17 |          1 | [`bing-migration-matrix.md`](./bing-migration-matrix.md)             |
+| **Provider total**              |  **33** |     **37** | all seven packages deleted                                           |
 
 ## Non-provider tools
 
-| Deleted command | Final decision | Consequence accepted by sole consumer |
-| --- | --- | --- |
-| `page-extract page entity extract` | drop | normalized ctx-backed SEO/GEO artifact removed; use ctx directly when needed |
-| `sitemap-watch registry dataset competitors` | drop | local competitor registry command removed |
-| `sitemap-watch snapshot dataset pages` | drop | recursive normalized sitemap snapshot command removed |
-| `sitemap-watch snapshot entity page` | drop | single-page snapshot selection removed |
+| Deleted command                              | Final decision | Consequence accepted by sole consumer                                        |
+| -------------------------------------------- | -------------- | ---------------------------------------------------------------------------- |
+| `page-extract page entity extract`           | drop           | normalized ctx-backed SEO/GEO artifact removed; use ctx directly when needed |
+| `sitemap-watch registry dataset competitors` | drop           | local competitor registry command removed                                    |
+| `sitemap-watch snapshot dataset pages`       | drop           | recursive normalized sitemap snapshot command removed                        |
+| `sitemap-watch snapshot entity page`         | drop           | single-page snapshot selection removed                                       |
 
 Final old-command total: **33 replace / 41 drop**. The repository now contains
 only `packages/gkit`; the private gkit package stays in the workspace layout.

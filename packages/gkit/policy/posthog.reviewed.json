@@ -1,82 +1,82 @@
 {
-  "version": 1,
-  "provider": "posthog",
-  "manifestRevision": "2026-07-14.slice3.1",
-  "reviewedAt": "2026-07-14T03:04:00.000Z",
-  "entries": [
-    {
-      "path": "/api/projects/{project_id}/query/",
-      "method": "post",
-      "operationId": "query_create",
-      "exposure": "executable",
-      "capability": {
-        "id": "posthog.query.run",
-        "provider": "posthog",
-        "revision": "1",
-        "title": "Run a bounded HogQL read",
-        "description": "Run one read-only HogQL SELECT or WITH query with an explicit result-row limit.",
-        "adapterKey": "query.run",
-        "effects": ["read"],
-        "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["query", "limit"],
-          "properties": {
-            "query": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 20000,
-              "pattern": "^\\s*(?:[Ss][Ee][Ll][Ee][Cc][Tt]|[Ww][Ii][Tt][Hh])\\b",
-              "allOf": [
-                {
-                  "not": {
-                    "pattern": "[Ll][Ii][Mm][Ii][Tt]\\s+[0-9]+"
-                  }
-                },
-                {
-                  "not": {
-                    "pattern": ";"
-                  }
-                },
-                {
-                  "not": {
-                    "pattern": "(?:--|/\\*|\\*/|#)"
-                  }
-                },
-                {
-                  "not": {
-                    "pattern": "\\b(?:[Ii][Nn][Ss][Ee][Rr][Tt]|[Uu][Pp][Dd][Aa][Tt][Ee]|[Dd][Ee][Ll][Ee][Tt][Ee]|[Dd][Rr][Oo][Pp]|[Aa][Ll][Tt][Ee][Rr]|[Tt][Rr][Uu][Nn][Cc][Aa][Tt][Ee]|[Cc][Rr][Ee][Aa][Tt][Ee])\\b"
-                  }
-                }
-              ]
-            },
-            "limit": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 1000
-            }
-          }
-        },
-        "examples": [
-          {
-            "title": "Safe preflight",
-            "input": {
-              "query": "SELECT event, count() AS total FROM events GROUP BY event ORDER BY total DESC",
-              "limit": 20
-            },
-            "command": "gkit --profile clonesite.ai posthog api call --capability-id posthog.query.run --input @req.json --out posthog-query.json --dry-run"
-          },
-          {
-            "title": "Live call after reviewing the dry-run",
-            "input": {
-              "query": "SELECT event, count() AS total FROM events GROUP BY event ORDER BY total DESC",
-              "limit": 20
-            },
-            "command": "gkit --profile clonesite.ai posthog api call --capability-id posthog.query.run --input @req.json --out posthog-query.json"
-          }
-        ]
-      }
-    }
-  ]
+	"version": 1,
+	"provider": "posthog",
+	"manifestRevision": "2026-07-14.slice3.1",
+	"reviewedAt": "2026-07-14T03:04:00.000Z",
+	"entries": [
+		{
+			"path": "/api/projects/{project_id}/query/",
+			"method": "post",
+			"operationId": "query_create",
+			"exposure": "executable",
+			"capability": {
+				"id": "posthog.query.run",
+				"provider": "posthog",
+				"revision": "1",
+				"title": "Run a bounded HogQL read",
+				"description": "Run one read-only HogQL SELECT or WITH query with an explicit result-row limit.",
+				"adapterKey": "query.run",
+				"effects": ["read"],
+				"inputSchema": {
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["query", "limit"],
+					"properties": {
+						"query": {
+							"type": "string",
+							"minLength": 1,
+							"maxLength": 20000,
+							"pattern": "^\\s*(?:[Ss][Ee][Ll][Ee][Cc][Tt]|[Ww][Ii][Tt][Hh])\\b",
+							"allOf": [
+								{
+									"not": {
+										"pattern": "[Ll][Ii][Mm][Ii][Tt]\\s+[0-9]+"
+									}
+								},
+								{
+									"not": {
+										"pattern": ";"
+									}
+								},
+								{
+									"not": {
+										"pattern": "(?:--|/\\*|\\*/|#)"
+									}
+								},
+								{
+									"not": {
+										"pattern": "\\b(?:[Ii][Nn][Ss][Ee][Rr][Tt]|[Uu][Pp][Dd][Aa][Tt][Ee]|[Dd][Ee][Ll][Ee][Tt][Ee]|[Dd][Rr][Oo][Pp]|[Aa][Ll][Tt][Ee][Rr]|[Tt][Rr][Uu][Nn][Cc][Aa][Tt][Ee]|[Cc][Rr][Ee][Aa][Tt][Ee])\\b"
+									}
+								}
+							]
+						},
+						"limit": {
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 1000
+						}
+					}
+				},
+				"examples": [
+					{
+						"title": "Safe preflight",
+						"input": {
+							"query": "SELECT event, count() AS total FROM events GROUP BY event ORDER BY total DESC",
+							"limit": 20
+						},
+						"command": "gkit --profile clonesite.ai posthog api call --capability-id posthog.query.run --input @req.json --out posthog-query.json --dry-run"
+					},
+					{
+						"title": "Live call after reviewing the dry-run",
+						"input": {
+							"query": "SELECT event, count() AS total FROM events GROUP BY event ORDER BY total DESC",
+							"limit": 20
+						},
+						"command": "gkit --profile clonesite.ai posthog api call --capability-id posthog.query.run --input @req.json --out posthog-query.json"
+					}
+				]
+			}
+		}
+	]
 }

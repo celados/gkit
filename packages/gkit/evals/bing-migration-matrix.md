@@ -26,26 +26,26 @@ doctor.
 
 ## `@deniffer/bing-webmaster-cli`
 
-| Legacy command | Decision | gkit target or missing gate |
-| --- | --- | --- |
-| `doctor dataset readiness` | keep | `gkit bing doctor` validates local config but intentionally does not preserve the legacy network probe |
-| `site dataset sites` | replace | `bing.sites.list`; both returned the same five sites |
-| `traffic dataset rank` | replace | `bing.traffic.rank`; same seven rows |
-| `traffic dataset queries` | replace | `bing.traffic.queries`; same 35 rows, with provider order varying between requests |
-| `traffic dataset pages` | replace | `bing.traffic.pages`; same 28 rows |
-| `traffic entity query` | replace | `bing.traffic.query`; same six rows for the selected query |
-| `traffic entity pageQueries` | replace | `bing.traffic.page-queries`; same 26 rows, with provider order varying between requests |
-| `traffic entity queryPages` | replace | `bing.traffic.query-pages`; same three rows |
-| `traffic entity queryPage` | replace | `bing.traffic.query-page`; both returned the same valid empty result |
-| `crawl dataset stats` | replace | `bing.crawl.stats`; same six rows |
-| `crawl dataset issues` | replace | `bing.crawl.issues`; both returned the same valid empty result |
-| `crawl entity settings` | replace | `bing.crawl.settings`; same settings object |
-| `link dataset pages` | replace | `bing.links.pages`; same link-count object |
-| `link entity url` | replace | `bing.links.url`; same URL-link object |
-| `sitemap dataset feeds` | replace | `bing.sitemaps.list`; same one-sitemap result |
-| `sitemap entity feed` | replace | `bing.sitemaps.get`; same four detail rows |
-| `url entity info` | replace | `bing.urls.info`; same URL index object |
-| `url entity traffic` | replace | `bing.urls.traffic`; same URL traffic object |
+| Legacy command               | Decision | gkit target or missing gate                                                                            |
+| ---------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| `doctor dataset readiness`   | keep     | `gkit bing doctor` validates local config but intentionally does not preserve the legacy network probe |
+| `site dataset sites`         | replace  | `bing.sites.list`; both returned the same five sites                                                   |
+| `traffic dataset rank`       | replace  | `bing.traffic.rank`; same seven rows                                                                   |
+| `traffic dataset queries`    | replace  | `bing.traffic.queries`; same 35 rows, with provider order varying between requests                     |
+| `traffic dataset pages`      | replace  | `bing.traffic.pages`; same 28 rows                                                                     |
+| `traffic entity query`       | replace  | `bing.traffic.query`; same six rows for the selected query                                             |
+| `traffic entity pageQueries` | replace  | `bing.traffic.page-queries`; same 26 rows, with provider order varying between requests                |
+| `traffic entity queryPages`  | replace  | `bing.traffic.query-pages`; same three rows                                                            |
+| `traffic entity queryPage`   | replace  | `bing.traffic.query-page`; both returned the same valid empty result                                   |
+| `crawl dataset stats`        | replace  | `bing.crawl.stats`; same six rows                                                                      |
+| `crawl dataset issues`       | replace  | `bing.crawl.issues`; both returned the same valid empty result                                         |
+| `crawl entity settings`      | replace  | `bing.crawl.settings`; same settings object                                                            |
+| `link dataset pages`         | replace  | `bing.links.pages`; same link-count object                                                             |
+| `link entity url`            | replace  | `bing.links.url`; same URL-link object                                                                 |
+| `sitemap dataset feeds`      | replace  | `bing.sitemaps.list`; same one-sitemap result                                                          |
+| `sitemap entity feed`        | replace  | `bing.sitemaps.get`; same four detail rows                                                             |
+| `url entity info`            | replace  | `bing.urls.info`; same URL index object                                                                |
+| `url entity traffic`         | replace  | `bing.urls.traffic`; same URL traffic object                                                           |
 
 ## Package retirement verdict
 

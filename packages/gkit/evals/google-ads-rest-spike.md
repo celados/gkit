@@ -45,16 +45,16 @@ not evidence that the manager scenario passed.
 The isolated spike made ten REST calls: nine expected `200` responses and one
 expected `400` negative response.
 
-| Surface | Observed result |
-| --- | --- |
-| OAuth | service-account credentials produced a derived access token; the token was registered as a secret immediately |
-| Accessible customers | one directly accessible account; zero directly accessible manager accounts |
-| Field metadata | two pages and two rows with a real `pageToken` loop |
-| Small GAQL | one page and 12 campaign rows; legacy and REST row counts matched |
-| Larger GAQL | one page and 850 search-term rows; peak observed heap delta was 1,266,192 bytes |
-| Keyword Ideas | two pages and four rows using a real `pageToken`; legacy and REST counts matched |
-| Historical metrics | one page and one row; legacy and REST counts matched |
-| Negative GAQL | HTTP `400`, status `INVALID_ARGUMENT`, allowlisted code `queryError:UNRECOGNIZED_FIELD`, and a request ID |
+| Surface              | Observed result                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| OAuth                | service-account credentials produced a derived access token; the token was registered as a secret immediately |
+| Accessible customers | one directly accessible account; zero directly accessible manager accounts                                    |
+| Field metadata       | two pages and two rows with a real `pageToken` loop                                                           |
+| Small GAQL           | one page and 12 campaign rows; legacy and REST row counts matched                                             |
+| Larger GAQL          | one page and 850 search-term rows; peak observed heap delta was 1,266,192 bytes                               |
+| Keyword Ideas        | two pages and four rows using a real `pageToken`; legacy and REST counts matched                              |
+| Historical metrics   | one page and one row; legacy and REST counts matched                                                          |
+| Negative GAQL        | HTTP `400`, status `INVALID_ARGUMENT`, allowlisted code `queryError:UNRECOGNIZED_FIELD`, and a request ID     |
 
 REST response fields are provider-native camelCase. The legacy Python wrapper
 converted protobuf messages to snake_case; gkit should preserve the REST

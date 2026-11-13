@@ -48,14 +48,14 @@ and argv contracts until the separate real-MCC gate passes.
 
 ## Live gate
 
-| Capability | Pages | Rows | Artifact bytes |
-| --- | ---: | ---: | ---: |
-| `google-ads.customers.list-accessible` | 1 | 1 | 58 |
-| `google-ads.fields.describe` | 1 | 1 | 280 |
-| `google-ads.fields.search` | 2 | 2 | 662 |
-| `google-ads.query.gaql` | 1 | 12 | 2,654 |
-| `google-ads.keyword-plan.generate-ideas` | 1 | 12 | 20,917 |
-| `google-ads.keyword-plan.generate-historical-metrics` | 1 | 1 | 1,904 |
+| Capability                                            | Pages | Rows | Artifact bytes |
+| ----------------------------------------------------- | ----: | ---: | -------------: |
+| `google-ads.customers.list-accessible`                |     1 |    1 |             58 |
+| `google-ads.fields.describe`                          |     1 |    1 |            280 |
+| `google-ads.fields.search`                            |     2 |    2 |            662 |
+| `google-ads.query.gaql`                               |     1 |   12 |          2,654 |
+| `google-ads.keyword-plan.generate-ideas`              |     1 |   12 |         20,917 |
+| `google-ads.keyword-plan.generate-historical-metrics` |     1 |    1 |          1,904 |
 
 The field search deliberately used a one-row page size and proved a real
 two-page `pageToken` loop. Each command returned a safe provider request ID and

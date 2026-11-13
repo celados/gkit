@@ -18,17 +18,17 @@ resource: ../../../docs/plans/2026-07-13-gkit-vertical-slice-plan.md
 
 ## `@deniffer/gsc-cli`
 
-| Legacy command | Decision | gkit target or evidence |
-| --- | --- | --- |
-| `skill path` | drop | local package skill distribution is not a provider capability; generated docs replace discovery |
-| `skill print` | drop | `gkit docs --provider gsc` and `gkit describe` are the canonical discovery surfaces |
-| `skill install` | drop | the sole consumer uses the linked `gkit` binary; no package-local skill install is needed |
-| `doctor dataset readiness` | keep | `gkit gsc doctor` validates local files, but intentionally does not preserve the legacy network probe |
-| `property dataset sites` | replace | `gsc.properties.list`; legacy and gkit both returned two properties |
-| `search dataset analytics` | replace | `gsc.search-analytics.query`; same dates, query dimension, and limit returned the same 25 rows |
-| `sitemap dataset sitemaps` | replace | `gsc.sitemaps.list`; both returned one sitemap with the same raw provider facts |
-| `sitemap entity sitemap` | replace | `gsc.sitemaps.get`; both returned the selected sitemap object |
-| `inspection entity url` | replace | `gsc.url-inspection.inspect`; both returned the same indexed URL result |
+| Legacy command             | Decision | gkit target or evidence                                                                               |
+| -------------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
+| `skill path`               | drop     | local package skill distribution is not a provider capability; generated docs replace discovery       |
+| `skill print`              | drop     | `gkit docs --provider gsc` and `gkit describe` are the canonical discovery surfaces                   |
+| `skill install`            | drop     | the sole consumer uses the linked `gkit` binary; no package-local skill install is needed             |
+| `doctor dataset readiness` | keep     | `gkit gsc doctor` validates local files, but intentionally does not preserve the legacy network probe |
+| `property dataset sites`   | replace  | `gsc.properties.list`; legacy and gkit both returned two properties                                   |
+| `search dataset analytics` | replace  | `gsc.search-analytics.query`; same dates, query dimension, and limit returned the same 25 rows        |
+| `sitemap dataset sitemaps` | replace  | `gsc.sitemaps.list`; both returned one sitemap with the same raw provider facts                       |
+| `sitemap entity sitemap`   | replace  | `gsc.sitemaps.get`; both returned the selected sitemap object                                         |
+| `inspection entity url`    | replace  | `gsc.url-inspection.inspect`; both returned the same indexed URL result                               |
 
 ## Package retirement verdict
 
