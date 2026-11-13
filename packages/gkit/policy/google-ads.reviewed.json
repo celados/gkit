@@ -1,290 +1,321 @@
 {
-  "version": 1,
-  "provider": "google-ads",
-  "manifestRevision": "2026-07-14.slice4.google-ads.1",
-  "reviewedAt": "2026-07-14T04:10:00.000Z",
-  "sourceChecksum": "sha256:202028d3abcb9e4681d35f3c28d06e6ced1eaac2ec57c56357c8ab5d522841d7",
-  "entries": [
-    {
-      "path": "v24/customers:listAccessibleCustomers",
-      "method": "get",
-      "operationId": "googleads.customers.listAccessibleCustomers",
-      "exposure": "executable",
-      "capabilities": [
-        {
-          "id": "google-ads.customers.list-accessible",
-          "provider": "google-ads",
-          "revision": "1",
-          "title": "List directly accessible Google Ads customers",
-          "description": "List customer resource names directly accessible to the authenticated service account.",
-          "adapterKey": "customers.list-accessible",
-          "effects": ["read"],
-          "inputSchema": {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {}
-          },
-          "examples": [
-            {
-              "title": "Safe preflight",
-              "input": {},
-              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json --dry-run"
-            },
-            {
-              "title": "Live read",
-              "input": {},
-              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "path": "v24/googleAdsFields:search",
-      "method": "post",
-      "operationId": "googleads.googleAdsFields.search",
-      "exposure": "executable",
-      "capabilities": [
-        {
-          "id": "google-ads.fields.describe",
-          "provider": "google-ads",
-          "revision": "1",
-          "title": "Describe one Google Ads field",
-          "description": "Read metadata for one exact Google Ads field name through the pinned field service.",
-          "adapterKey": "fields.describe",
-          "effects": ["read"],
-          "inputSchema": {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["name"],
-            "properties": {
-              "name": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 256,
-                "pattern": "^[a-z][a-z0-9_.]*$"
-              }
-            }
-          },
-          "examples": [
-            {
-              "title": "Describe campaign.id",
-              "input": { "name": "campaign.id" },
-              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.fields.describe --input '{\"name\":\"campaign.id\"}' --out campaign-id-field.json --dry-run"
-            }
-          ]
-        },
-        {
-          "id": "google-ads.fields.search",
-          "provider": "google-ads",
-          "revision": "1",
-          "title": "Search Google Ads field metadata",
-          "description": "Run one provider-native GoogleAdsField query and explicitly paginate all result pages.",
-          "adapterKey": "fields.search",
-          "effects": ["read"],
-          "inputSchema": {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["query"],
-            "properties": {
-              "query": { "type": "string", "minLength": 1, "maxLength": 20000 },
-              "pageSize": { "type": "integer", "minimum": 1, "maximum": 10000 }
-            }
-          },
-          "examples": [
-            {
-              "title": "Search campaign fields",
-              "input": { "query": "SELECT name, category, data_type WHERE name LIKE 'campaign.%'" },
-              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.fields.search --input @fields.json --out fields-pages.json --dry-run"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "path": "v24/customers/{+customerId}/googleAds:search",
-      "method": "post",
-      "operationId": "googleads.customers.googleAds.search",
-      "exposure": "executable",
-      "capabilities": [
-        {
-          "id": "google-ads.query.gaql",
-          "provider": "google-ads",
-          "revision": "1",
-          "title": "Run a paginated GAQL read",
-          "description": "Run one provider-native GAQL query against the profile-bound customer and stream every REST page into one raw page bundle.",
-          "adapterKey": "query.gaql",
-          "effects": ["read"],
-          "inputSchema": {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["query"],
-            "properties": {
-              "query": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 200000,
-                "pattern": "^\\s*[Ss][Ee][Ll][Ee][Cc][Tt]\\b"
-              }
-            }
-          },
-          "examples": [
-            {
-              "title": "Read campaigns",
-              "input": {
-                "query": "SELECT campaign.id, campaign.name FROM campaign ORDER BY campaign.id LIMIT 25"
-              },
-              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.query.gaql --input @gaql.json --out gaql-pages.json --dry-run"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "path": "v24/customers/{+customerId}:generateKeywordIdeas",
-      "method": "post",
-      "operationId": "googleads.customers.generateKeywordIdeas",
-      "exposure": "executable",
-      "capabilities": [
-        {
-          "id": "google-ads.keyword-plan.generate-ideas",
-          "provider": "google-ads",
-          "revision": "1",
-          "title": "Generate keyword ideas",
-          "description": "Generate and explicitly paginate provider-native Keyword Planner ideas for the profile-bound customer.",
-          "adapterKey": "keyword-plan.generate-ideas",
-          "effects": ["read"],
-          "inputSchema": {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "keywordSeed": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["keywords"],
-                "properties": {
-                  "keywords": {
-                    "type": "array",
-                    "minItems": 1,
-                    "maxItems": 20,
-                    "items": { "type": "string", "minLength": 1, "maxLength": 80 }
-                  }
-                }
-              },
-              "urlSeed": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["url"],
-                "properties": { "url": { "type": "string", "minLength": 1, "maxLength": 2048 } }
-              },
-              "keywordAndUrlSeed": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["keywords", "url"],
-                "properties": {
-                  "keywords": {
-                    "type": "array",
-                    "minItems": 1,
-                    "maxItems": 20,
-                    "items": { "type": "string", "minLength": 1, "maxLength": 80 }
-                  },
-                  "url": { "type": "string", "minLength": 1, "maxLength": 2048 }
-                }
-              },
-              "geoTargetConstants": {
-                "type": "array",
-                "maxItems": 10,
-                "items": { "type": "string", "pattern": "^geoTargetConstants/[1-9][0-9]*$" }
-              },
-              "language": { "type": "string", "pattern": "^languageConstants/[1-9][0-9]*$" },
-              "keywordPlanNetwork": { "enum": ["GOOGLE_SEARCH", "GOOGLE_SEARCH_AND_PARTNERS"] },
-              "includeAdultKeywords": { "type": "boolean" },
-              "pageSize": { "type": "integer", "minimum": 1, "maximum": 10000 }
-            },
-            "oneOf": [
-              { "required": ["keywordSeed"], "properties": { "keywordSeed": {} } },
-              { "required": ["urlSeed"], "properties": { "urlSeed": {} } },
-              {
-                "required": ["keywordAndUrlSeed"],
-                "properties": { "keywordAndUrlSeed": {} }
-              }
-            ]
-          },
-          "examples": [
-            {
-              "title": "Generate US English ideas",
-              "input": {
-                "keywordSeed": { "keywords": ["website cloner"] },
-                "geoTargetConstants": ["geoTargetConstants/2840"],
-                "language": "languageConstants/1000",
-                "keywordPlanNetwork": "GOOGLE_SEARCH"
-              },
-              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.keyword-plan.generate-ideas --input @ideas.json --out keyword-ideas-pages.json --dry-run"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "path": "v24/customers/{+customerId}:generateKeywordHistoricalMetrics",
-      "method": "post",
-      "operationId": "googleads.customers.generateKeywordHistoricalMetrics",
-      "exposure": "executable",
-      "capabilities": [
-        {
-          "id": "google-ads.keyword-plan.generate-historical-metrics",
-          "provider": "google-ads",
-          "revision": "1",
-          "title": "Generate keyword historical metrics",
-          "description": "Read provider-native Keyword Planner historical metrics for an explicit bounded keyword set.",
-          "adapterKey": "keyword-plan.generate-historical-metrics",
-          "effects": ["read"],
-          "inputSchema": {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["keywords"],
-            "properties": {
-              "keywords": {
-                "type": "array",
-                "minItems": 1,
-                "maxItems": 100,
-                "items": { "type": "string", "minLength": 1, "maxLength": 80 }
-              },
-              "geoTargetConstants": {
-                "type": "array",
-                "maxItems": 10,
-                "items": { "type": "string", "pattern": "^geoTargetConstants/[1-9][0-9]*$" }
-              },
-              "language": { "type": "string", "pattern": "^languageConstants/[1-9][0-9]*$" },
-              "keywordPlanNetwork": { "enum": ["GOOGLE_SEARCH", "GOOGLE_SEARCH_AND_PARTNERS"] },
-              "historicalMetricsOptions": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": { "includeAverageCpc": { "type": "boolean" } }
-              }
-            }
-          },
-          "examples": [
-            {
-              "title": "Read US English metrics",
-              "input": {
-                "keywords": ["website cloner", "clone website"],
-                "geoTargetConstants": ["geoTargetConstants/2840"],
-                "language": "languageConstants/1000",
-                "keywordPlanNetwork": "GOOGLE_SEARCH",
-                "historicalMetricsOptions": { "includeAverageCpc": true }
-              },
-              "command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.keyword-plan.generate-historical-metrics --input @historical.json --out keyword-history-pages.json --dry-run"
-            }
-          ]
-        }
-      ]
-    }
-  ]
+	"version": 1,
+	"provider": "google-ads",
+	"manifestRevision": "2026-07-14.slice4.google-ads.1",
+	"reviewedAt": "2026-07-14T04:10:00.000Z",
+	"sourceChecksum": "sha256:202028d3abcb9e4681d35f3c28d06e6ced1eaac2ec57c56357c8ab5d522841d7",
+	"entries": [
+		{
+			"path": "v24/customers:listAccessibleCustomers",
+			"method": "get",
+			"operationId": "googleads.customers.listAccessibleCustomers",
+			"exposure": "executable",
+			"capabilities": [
+				{
+					"id": "google-ads.customers.list-accessible",
+					"provider": "google-ads",
+					"revision": "1",
+					"title": "List directly accessible Google Ads customers",
+					"description": "List customer resource names directly accessible to the authenticated service account.",
+					"adapterKey": "customers.list-accessible",
+					"effects": ["read"],
+					"inputSchema": {
+						"$schema": "http://json-schema.org/draft-07/schema#",
+						"type": "object",
+						"additionalProperties": false,
+						"properties": {}
+					},
+					"examples": [
+						{
+							"title": "Safe preflight",
+							"input": {},
+							"command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json --dry-run"
+						},
+						{
+							"title": "Live read",
+							"input": {},
+							"command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.customers.list-accessible --input '{}' --out google-ads-customers.json"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "v24/googleAdsFields:search",
+			"method": "post",
+			"operationId": "googleads.googleAdsFields.search",
+			"exposure": "executable",
+			"capabilities": [
+				{
+					"id": "google-ads.fields.describe",
+					"provider": "google-ads",
+					"revision": "1",
+					"title": "Describe one Google Ads field",
+					"description": "Read metadata for one exact Google Ads field name through the pinned field service.",
+					"adapterKey": "fields.describe",
+					"effects": ["read"],
+					"inputSchema": {
+						"$schema": "http://json-schema.org/draft-07/schema#",
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["name"],
+						"properties": {
+							"name": {
+								"type": "string",
+								"minLength": 1,
+								"maxLength": 256,
+								"pattern": "^[a-z][a-z0-9_.]*$"
+							}
+						}
+					},
+					"examples": [
+						{
+							"title": "Describe campaign.id",
+							"input": { "name": "campaign.id" },
+							"command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.fields.describe --input '{\"name\":\"campaign.id\"}' --out campaign-id-field.json --dry-run"
+						}
+					]
+				},
+				{
+					"id": "google-ads.fields.search",
+					"provider": "google-ads",
+					"revision": "1",
+					"title": "Search Google Ads field metadata",
+					"description": "Run one provider-native GoogleAdsField query and explicitly paginate all result pages.",
+					"adapterKey": "fields.search",
+					"effects": ["read"],
+					"inputSchema": {
+						"$schema": "http://json-schema.org/draft-07/schema#",
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["query"],
+						"properties": {
+							"query": { "type": "string", "minLength": 1, "maxLength": 20000 },
+							"pageSize": { "type": "integer", "minimum": 1, "maximum": 10000 }
+						}
+					},
+					"examples": [
+						{
+							"title": "Search campaign fields",
+							"input": {
+								"query": "SELECT name, category, data_type WHERE name LIKE 'campaign.%'"
+							},
+							"command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.fields.search --input @fields.json --out fields-pages.json --dry-run"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "v24/customers/{+customerId}/googleAds:search",
+			"method": "post",
+			"operationId": "googleads.customers.googleAds.search",
+			"exposure": "executable",
+			"capabilities": [
+				{
+					"id": "google-ads.query.gaql",
+					"provider": "google-ads",
+					"revision": "1",
+					"title": "Run a paginated GAQL read",
+					"description": "Run one provider-native GAQL query against the profile-bound customer and stream every REST page into one raw page bundle.",
+					"adapterKey": "query.gaql",
+					"effects": ["read"],
+					"inputSchema": {
+						"$schema": "http://json-schema.org/draft-07/schema#",
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["query"],
+						"properties": {
+							"query": {
+								"type": "string",
+								"minLength": 1,
+								"maxLength": 200000,
+								"pattern": "^\\s*[Ss][Ee][Ll][Ee][Cc][Tt]\\b"
+							}
+						}
+					},
+					"examples": [
+						{
+							"title": "Read campaigns",
+							"input": {
+								"query": "SELECT campaign.id, campaign.name FROM campaign ORDER BY campaign.id LIMIT 25"
+							},
+							"command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.query.gaql --input @gaql.json --out gaql-pages.json --dry-run"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "v24/customers/{+customerId}:generateKeywordIdeas",
+			"method": "post",
+			"operationId": "googleads.customers.generateKeywordIdeas",
+			"exposure": "executable",
+			"capabilities": [
+				{
+					"id": "google-ads.keyword-plan.generate-ideas",
+					"provider": "google-ads",
+					"revision": "1",
+					"title": "Generate keyword ideas",
+					"description": "Generate and explicitly paginate provider-native Keyword Planner ideas for the profile-bound customer.",
+					"adapterKey": "keyword-plan.generate-ideas",
+					"effects": ["read"],
+					"inputSchema": {
+						"$schema": "http://json-schema.org/draft-07/schema#",
+						"type": "object",
+						"additionalProperties": false,
+						"properties": {
+							"keywordSeed": {
+								"type": "object",
+								"additionalProperties": false,
+								"required": ["keywords"],
+								"properties": {
+									"keywords": {
+										"type": "array",
+										"minItems": 1,
+										"maxItems": 20,
+										"items": {
+											"type": "string",
+											"minLength": 1,
+											"maxLength": 80
+										}
+									}
+								}
+							},
+							"urlSeed": {
+								"type": "object",
+								"additionalProperties": false,
+								"required": ["url"],
+								"properties": {
+									"url": { "type": "string", "minLength": 1, "maxLength": 2048 }
+								}
+							},
+							"keywordAndUrlSeed": {
+								"type": "object",
+								"additionalProperties": false,
+								"required": ["keywords", "url"],
+								"properties": {
+									"keywords": {
+										"type": "array",
+										"minItems": 1,
+										"maxItems": 20,
+										"items": {
+											"type": "string",
+											"minLength": 1,
+											"maxLength": 80
+										}
+									},
+									"url": { "type": "string", "minLength": 1, "maxLength": 2048 }
+								}
+							},
+							"geoTargetConstants": {
+								"type": "array",
+								"maxItems": 10,
+								"items": {
+									"type": "string",
+									"pattern": "^geoTargetConstants/[1-9][0-9]*$"
+								}
+							},
+							"language": {
+								"type": "string",
+								"pattern": "^languageConstants/[1-9][0-9]*$"
+							},
+							"keywordPlanNetwork": {
+								"enum": ["GOOGLE_SEARCH", "GOOGLE_SEARCH_AND_PARTNERS"]
+							},
+							"includeAdultKeywords": { "type": "boolean" },
+							"pageSize": { "type": "integer", "minimum": 1, "maximum": 10000 }
+						},
+						"oneOf": [
+							{
+								"required": ["keywordSeed"],
+								"properties": { "keywordSeed": {} }
+							},
+							{ "required": ["urlSeed"], "properties": { "urlSeed": {} } },
+							{
+								"required": ["keywordAndUrlSeed"],
+								"properties": { "keywordAndUrlSeed": {} }
+							}
+						]
+					},
+					"examples": [
+						{
+							"title": "Generate US English ideas",
+							"input": {
+								"keywordSeed": { "keywords": ["website cloner"] },
+								"geoTargetConstants": ["geoTargetConstants/2840"],
+								"language": "languageConstants/1000",
+								"keywordPlanNetwork": "GOOGLE_SEARCH"
+							},
+							"command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.keyword-plan.generate-ideas --input @ideas.json --out keyword-ideas-pages.json --dry-run"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "v24/customers/{+customerId}:generateKeywordHistoricalMetrics",
+			"method": "post",
+			"operationId": "googleads.customers.generateKeywordHistoricalMetrics",
+			"exposure": "executable",
+			"capabilities": [
+				{
+					"id": "google-ads.keyword-plan.generate-historical-metrics",
+					"provider": "google-ads",
+					"revision": "1",
+					"title": "Generate keyword historical metrics",
+					"description": "Read provider-native Keyword Planner historical metrics for an explicit bounded keyword set.",
+					"adapterKey": "keyword-plan.generate-historical-metrics",
+					"effects": ["read"],
+					"inputSchema": {
+						"$schema": "http://json-schema.org/draft-07/schema#",
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["keywords"],
+						"properties": {
+							"keywords": {
+								"type": "array",
+								"minItems": 1,
+								"maxItems": 100,
+								"items": { "type": "string", "minLength": 1, "maxLength": 80 }
+							},
+							"geoTargetConstants": {
+								"type": "array",
+								"maxItems": 10,
+								"items": {
+									"type": "string",
+									"pattern": "^geoTargetConstants/[1-9][0-9]*$"
+								}
+							},
+							"language": {
+								"type": "string",
+								"pattern": "^languageConstants/[1-9][0-9]*$"
+							},
+							"keywordPlanNetwork": {
+								"enum": ["GOOGLE_SEARCH", "GOOGLE_SEARCH_AND_PARTNERS"]
+							},
+							"historicalMetricsOptions": {
+								"type": "object",
+								"additionalProperties": false,
+								"properties": { "includeAverageCpc": { "type": "boolean" } }
+							}
+						}
+					},
+					"examples": [
+						{
+							"title": "Read US English metrics",
+							"input": {
+								"keywords": ["website cloner", "clone website"],
+								"geoTargetConstants": ["geoTargetConstants/2840"],
+								"language": "languageConstants/1000",
+								"keywordPlanNetwork": "GOOGLE_SEARCH",
+								"historicalMetricsOptions": { "includeAverageCpc": true }
+							},
+							"command": "gkit --profile openclaw-web google-ads api call --capability-id google-ads.keyword-plan.generate-historical-metrics --input @historical.json --out keyword-history-pages.json --dry-run"
+						}
+					]
+				}
+			]
+		}
+	]
 }

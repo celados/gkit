@@ -32,13 +32,13 @@ reads, an inaccessible-property negative, and same-input legacy comparisons.
 
 ## Real and legacy comparison gate
 
-| Capability | gkit rows | Legacy result | Artifact bytes |
-| --- | ---: | --- | ---: |
-| `gsc.properties.list` | 2 | 2 properties | 218 |
-| `gsc.search-analytics.query` | 25 | same 25-row request | 4,393 |
-| `gsc.sitemaps.list` | 1 | same one-sitemap result | 424 |
-| `gsc.sitemaps.get` | 1 | same selected sitemap object | 337 |
-| `gsc.url-inspection.inspect` | 1 | same indexed URL result | 930 |
+| Capability                   | gkit rows | Legacy result                | Artifact bytes |
+| ---------------------------- | --------: | ---------------------------- | -------------: |
+| `gsc.properties.list`        |         2 | 2 properties                 |            218 |
+| `gsc.search-analytics.query` |        25 | same 25-row request          |          4,393 |
+| `gsc.sitemaps.list`          |         1 | same one-sitemap result      |            424 |
+| `gsc.sitemaps.get`           |         1 | same selected sitemap object |            337 |
+| `gsc.url-inspection.inspect` |         1 | same indexed URL result      |            930 |
 
 The negative Search Analytics request used an inaccessible property. It exited
 1 with HTTP `403`, `AUTH_FAILED`, `outcome:"confirmed"`, and a 474-byte raw

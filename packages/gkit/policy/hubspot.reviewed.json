@@ -1,300 +1,441 @@
 {
-  "version": 1,
-  "provider": "hubspot",
-  "manifestRevision": "2026-08-30.hubspot.read-v1.1",
-  "reviewedAt": "2026-08-30T05:00:00.000Z",
-  "entries": [
-    {
-      "path": "/crm/properties/2026-03/{objectType}",
-      "method": "get",
-      "operationId": "crm.properties.list",
-      "exposure": "executable",
-      "capability": {
-        "id": "hubspot.crm.properties.list",
-        "provider": "hubspot",
-        "revision": "1",
-        "adapterKey": "crm.properties.list",
-        "title": "List CRM property metadata",
-        "description": "List non-sensitive property definitions for one reviewed CRM object type.",
-        "effects": ["read"],
-        "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["objectType"],
-          "properties": { "objectType": { "enum": ["companies", "contacts", "deals", "tickets"] } }
-        },
-        "examples": [{
-          "input": { "objectType": "contacts" },
-          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.properties.list --input '{\"objectType\":\"contacts\"}' --out hubspot-contact-properties.json --dry-run"
-        }]
-      }
-    },
-    {
-      "path": "/crm/properties/2026-03/{objectType}",
-      "method": "post",
-      "operationId": "crm.properties.create",
-      "exposure": "inventory",
-      "reason": "Mutation is outside the read-only HubSpot V1 provider."
-    },
-    {
-      "path": "/crm/objects/2026-03/{objectType}",
-      "method": "get",
-      "operationId": "crm.objects.list",
-      "exposure": "executable",
-      "capability": {
-        "id": "hubspot.crm.objects.list",
-        "provider": "hubspot",
-        "revision": "1",
-        "adapterKey": "crm.objects.list",
-        "title": "List CRM records",
-        "description": "List bounded records for one reviewed CRM object type and reviewed properties.",
-        "effects": ["read"],
-        "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["objectType", "properties", "limit"],
-          "properties": {
-            "objectType": { "enum": ["companies", "contacts", "deals", "tickets"] },
-            "properties": { "type": "array", "minItems": 1, "uniqueItems": true, "maxItems": 50, "items": { "$ref": "#/definitions/property" } },
-            "archived": { "type": "boolean" },
-            "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
-            "limit": { "type": "integer", "minimum": 1, "maximum": 5000 }
-          },
-          "definitions": { "property": { "enum": ["amount", "city", "closedate", "content", "country", "createdate", "dealname", "dealstage", "domain", "email", "firstname", "hs_analytics_source", "hs_analytics_source_data_1", "hs_analytics_source_data_2", "hs_lastmodifieddate", "hs_lead_status", "hs_object_id", "hs_pipeline", "hs_pipeline_stage", "hs_ticket_category", "hs_ticket_priority", "hubspot_owner_id", "industry", "lastmodifieddate", "lastname", "lifecyclestage", "name", "numberofemployees", "pipeline", "state", "subject"] } }
-        },
-        "examples": [{
-          "input": { "objectType": "contacts", "properties": ["email", "lifecyclestage"], "limit": 100 },
-          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.objects.list --input @request.json --out hubspot-contacts.json --dry-run"
-        }]
-      }
-    },
-    {
-      "path": "/crm/objects/2026-03/{objectType}",
-      "method": "post",
-      "operationId": "crm.objects.create",
-      "exposure": "inventory",
-      "reason": "Mutation is outside the read-only HubSpot V1 provider."
-    },
-    {
-      "path": "/crm/objects/2026-03/{objectType}/search",
-      "method": "post",
-      "operationId": "crm.objects.search",
-      "exposure": "executable",
-      "capability": {
-        "id": "hubspot.crm.objects.search",
-        "provider": "hubspot",
-        "revision": "1",
-        "adapterKey": "crm.objects.search",
-        "title": "Search CRM records",
-        "description": "Run one bounded HubSpot CRM Search POST over reviewed objects, properties, filters, and sorts.",
-        "effects": ["read"],
-        "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["objectType", "properties", "limit"],
-          "properties": {
-            "objectType": { "enum": ["companies", "contacts", "deals", "tickets"] },
-            "properties": { "type": "array", "minItems": 1, "uniqueItems": true, "maxItems": 50, "items": { "type": "string", "minLength": 1, "maxLength": 100 } },
-            "query": { "type": "string", "minLength": 1, "maxLength": 3000 },
-            "filterGroups": { "type": "array", "maxItems": 5, "items": { "type": "object" } },
-            "sorts": { "type": "array", "maxItems": 1, "items": { "type": "object" } },
-            "pageSize": { "type": "integer", "minimum": 1, "maximum": 200 },
-            "limit": { "type": "integer", "minimum": 1, "maximum": 10000 }
-          }
-        },
-        "examples": [{
-          "input": { "objectType": "contacts", "properties": ["email", "lifecyclestage"], "filterGroups": [{ "filters": [{ "propertyName": "lifecyclestage", "operator": "EQ", "value": "customer" }] }], "limit": 200 },
-          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.objects.search --input @request.json --out hubspot-contact-search.json --dry-run"
-        }]
-      }
-    },
-    {
-      "path": "/crm/objects/2026-03/{objectType}/{recordId}",
-      "method": "patch",
-      "operationId": "crm.objects.update",
-      "exposure": "inventory",
-      "reason": "Mutation is outside the read-only HubSpot V1 provider."
-    },
-    {
-      "path": "/crm/objects/2026-03/{objectType}/{recordId}",
-      "method": "delete",
-      "operationId": "crm.objects.archive",
-      "exposure": "inventory",
-      "reason": "Destructive mutation is outside the read-only HubSpot V1 provider."
-    },
-    {
-      "path": "/crm/objects/2026-03/{fromObjectType}/{objectId}/associations/{toObjectType}",
-      "method": "get",
-      "operationId": "crm.associations.list",
-      "exposure": "executable",
-      "capability": {
-        "id": "hubspot.crm.associations.list",
-        "provider": "hubspot",
-        "revision": "1",
-        "adapterKey": "crm.associations.list",
-        "title": "List record associations",
-        "description": "List bounded associations from one reviewed CRM record to one reviewed object type.",
-        "effects": ["read"],
-        "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["fromObjectType", "objectId", "toObjectType", "limit"],
-          "properties": {
-            "fromObjectType": { "enum": ["companies", "contacts", "deals", "tickets"] },
-            "objectId": { "type": "string", "pattern": "^[1-9]\\d{0,19}$" },
-            "toObjectType": { "enum": ["companies", "contacts", "deals", "tickets"] },
-            "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
-            "limit": { "type": "integer", "minimum": 1, "maximum": 5000 }
-          }
-        },
-        "examples": [{
-          "input": { "fromObjectType": "contacts", "objectId": "123", "toObjectType": "companies", "limit": 100 },
-          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.associations.list --input @request.json --out hubspot-associations.json --dry-run"
-        }]
-      }
-    },
-    {
-      "path": "/crm/objects/2026-03/{fromObjectType}/{objectId}/associations/default/{toObjectType}/{toObjectId}",
-      "method": "put",
-      "operationId": "crm.associations.create",
-      "exposure": "inventory",
-      "reason": "Mutation is outside the read-only HubSpot V1 provider."
-    },
-    {
-      "path": "/crm/objects/2026-03/{fromObjectType}/{objectId}/associations/{toObjectType}/{toObjectId}",
-      "method": "delete",
-      "operationId": "crm.associations.delete",
-      "exposure": "inventory",
-      "reason": "Destructive mutation is outside the read-only HubSpot V1 provider."
-    },
-    {
-      "path": "/events/event-occurrences/2026-03",
-      "method": "get",
-      "operationId": "events.occurrences.list",
-      "exposure": "executable",
-      "capability": {
-        "id": "hubspot.events.occurrences.list",
-        "provider": "hubspot",
-        "revision": "1",
-        "adapterKey": "events.occurrences.list",
-        "title": "List event occurrences",
-        "description": "List bounded HubSpot event occurrences within an explicit time window.",
-        "effects": ["read"],
-        "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["occurredAfter", "occurredBefore", "properties", "limit"],
-          "properties": {
-            "occurredAfter": { "type": "string", "format": "date-time", "maxLength": 64 },
-            "occurredBefore": { "type": "string", "format": "date-time", "maxLength": 64 },
-            "eventType": { "type": "string", "minLength": 1, "maxLength": 200 },
-            "objectType": { "enum": ["company", "contact", "deal", "ticket"] },
-            "objectId": { "type": "string", "pattern": "^[1-9]\\d{0,19}$" },
-            "properties": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 20,
-              "uniqueItems": true,
-              "items": { "enum": ["hs_browser", "hs_city", "hs_content_type", "hs_country", "hs_device_name", "hs_device_type", "hs_page_title", "hs_referrer", "hs_touchpoint_source", "hs_url", "hs_utm_campaign", "hs_utm_medium", "hs_utm_source"] }
-            },
-            "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
-            "limit": { "type": "integer", "minimum": 1, "maximum": 5000 }
-          }
-        },
-        "examples": [{
-          "input": { "occurredAfter": "2026-08-01T00:00:00Z", "occurredBefore": "2026-08-02T00:00:00Z", "eventType": "e_visited_page", "properties": ["hs_url", "hs_page_title"], "limit": 100 },
-          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.events.occurrences.list --input @request.json --out hubspot-events.json --dry-run"
-        }]
-      }
-    },
-    {
-      "path": "/events/2026-03/send",
-      "method": "post",
-      "operationId": "events.occurrences.send",
-      "exposure": "inventory",
-      "reason": "Event sending is outside the read-only HubSpot V1 provider."
-    },
-    {
-      "path": "/crm/pipelines/2026-03/{objectType}",
-      "method": "get",
-      "operationId": "crm.pipelines.list",
-      "exposure": "executable",
-      "capability": {
-        "id": "hubspot.crm.pipelines.list",
-        "provider": "hubspot",
-        "revision": "1",
-        "adapterKey": "crm.pipelines.list",
-        "title": "List CRM pipelines",
-        "description": "List pipelines and stages for deals or tickets.",
-        "effects": ["read"],
-        "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["objectType"],
-          "properties": { "objectType": { "enum": ["deals", "tickets"] } }
-        },
-        "examples": [{
-          "input": { "objectType": "deals" },
-          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.pipelines.list --input '{\"objectType\":\"deals\"}' --out hubspot-deal-pipelines.json --dry-run"
-        }]
-      }
-    },
-    {
-      "path": "/crm/pipelines/2026-03/{objectType}",
-      "method": "post",
-      "operationId": "crm.pipelines.create",
-      "exposure": "inventory",
-      "reason": "Mutation is outside the read-only HubSpot V1 provider."
-    },
-    {
-      "path": "/crm/pipelines/2026-03/{objectType}/{pipelineId}",
-      "method": "delete",
-      "operationId": "crm.pipelines.delete",
-      "exposure": "inventory",
-      "reason": "Destructive mutation is outside the read-only HubSpot V1 provider."
-    },
-    {
-      "path": "/crm/owners/2026-03",
-      "method": "get",
-      "operationId": "crm.owners.list",
-      "exposure": "executable",
-      "capability": {
-        "id": "hubspot.crm.owners.list",
-        "provider": "hubspot",
-        "revision": "1",
-        "adapterKey": "crm.owners.list",
-        "title": "List CRM owners",
-        "description": "List bounded active or archived HubSpot owners for attribution joins.",
-        "effects": ["read"],
-        "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["limit"],
-          "properties": {
-            "archived": { "type": "boolean" },
-            "pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
-            "limit": { "type": "integer", "minimum": 1, "maximum": 5000 }
-          }
-        },
-        "examples": [{
-          "input": { "limit": 100 },
-          "command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.owners.list --input '{\"limit\":100}' --out hubspot-owners.json --dry-run"
-        }]
-      }
-    },
-    {
-      "path": "/crm/imports/2026-03/imports",
-      "method": "post",
-      "operationId": "crm.imports.create",
-      "exposure": "inventory",
-      "reason": "Imports are mutations and are outside the read-only HubSpot V1 provider."
-    }
-  ]
+	"version": 1,
+	"provider": "hubspot",
+	"manifestRevision": "2026-08-30.hubspot.read-v1.1",
+	"reviewedAt": "2026-08-30T05:00:00.000Z",
+	"entries": [
+		{
+			"path": "/crm/properties/2026-03/{objectType}",
+			"method": "get",
+			"operationId": "crm.properties.list",
+			"exposure": "executable",
+			"capability": {
+				"id": "hubspot.crm.properties.list",
+				"provider": "hubspot",
+				"revision": "1",
+				"adapterKey": "crm.properties.list",
+				"title": "List CRM property metadata",
+				"description": "List non-sensitive property definitions for one reviewed CRM object type.",
+				"effects": ["read"],
+				"inputSchema": {
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["objectType"],
+					"properties": {
+						"objectType": {
+							"enum": ["companies", "contacts", "deals", "tickets"]
+						}
+					}
+				},
+				"examples": [
+					{
+						"input": { "objectType": "contacts" },
+						"command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.properties.list --input '{\"objectType\":\"contacts\"}' --out hubspot-contact-properties.json --dry-run"
+					}
+				]
+			}
+		},
+		{
+			"path": "/crm/properties/2026-03/{objectType}",
+			"method": "post",
+			"operationId": "crm.properties.create",
+			"exposure": "inventory",
+			"reason": "Mutation is outside the read-only HubSpot V1 provider."
+		},
+		{
+			"path": "/crm/objects/2026-03/{objectType}",
+			"method": "get",
+			"operationId": "crm.objects.list",
+			"exposure": "executable",
+			"capability": {
+				"id": "hubspot.crm.objects.list",
+				"provider": "hubspot",
+				"revision": "1",
+				"adapterKey": "crm.objects.list",
+				"title": "List CRM records",
+				"description": "List bounded records for one reviewed CRM object type and reviewed properties.",
+				"effects": ["read"],
+				"inputSchema": {
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["objectType", "properties", "limit"],
+					"properties": {
+						"objectType": {
+							"enum": ["companies", "contacts", "deals", "tickets"]
+						},
+						"properties": {
+							"type": "array",
+							"minItems": 1,
+							"uniqueItems": true,
+							"maxItems": 50,
+							"items": { "$ref": "#/definitions/property" }
+						},
+						"archived": { "type": "boolean" },
+						"pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+						"limit": { "type": "integer", "minimum": 1, "maximum": 5000 }
+					},
+					"definitions": {
+						"property": {
+							"enum": [
+								"amount",
+								"city",
+								"closedate",
+								"content",
+								"country",
+								"createdate",
+								"dealname",
+								"dealstage",
+								"domain",
+								"email",
+								"firstname",
+								"hs_analytics_source",
+								"hs_analytics_source_data_1",
+								"hs_analytics_source_data_2",
+								"hs_lastmodifieddate",
+								"hs_lead_status",
+								"hs_object_id",
+								"hs_pipeline",
+								"hs_pipeline_stage",
+								"hs_ticket_category",
+								"hs_ticket_priority",
+								"hubspot_owner_id",
+								"industry",
+								"lastmodifieddate",
+								"lastname",
+								"lifecyclestage",
+								"name",
+								"numberofemployees",
+								"pipeline",
+								"state",
+								"subject"
+							]
+						}
+					}
+				},
+				"examples": [
+					{
+						"input": {
+							"objectType": "contacts",
+							"properties": ["email", "lifecyclestage"],
+							"limit": 100
+						},
+						"command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.objects.list --input @request.json --out hubspot-contacts.json --dry-run"
+					}
+				]
+			}
+		},
+		{
+			"path": "/crm/objects/2026-03/{objectType}",
+			"method": "post",
+			"operationId": "crm.objects.create",
+			"exposure": "inventory",
+			"reason": "Mutation is outside the read-only HubSpot V1 provider."
+		},
+		{
+			"path": "/crm/objects/2026-03/{objectType}/search",
+			"method": "post",
+			"operationId": "crm.objects.search",
+			"exposure": "executable",
+			"capability": {
+				"id": "hubspot.crm.objects.search",
+				"provider": "hubspot",
+				"revision": "1",
+				"adapterKey": "crm.objects.search",
+				"title": "Search CRM records",
+				"description": "Run one bounded HubSpot CRM Search POST over reviewed objects, properties, filters, and sorts.",
+				"effects": ["read"],
+				"inputSchema": {
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["objectType", "properties", "limit"],
+					"properties": {
+						"objectType": {
+							"enum": ["companies", "contacts", "deals", "tickets"]
+						},
+						"properties": {
+							"type": "array",
+							"minItems": 1,
+							"uniqueItems": true,
+							"maxItems": 50,
+							"items": { "type": "string", "minLength": 1, "maxLength": 100 }
+						},
+						"query": { "type": "string", "minLength": 1, "maxLength": 3000 },
+						"filterGroups": {
+							"type": "array",
+							"maxItems": 5,
+							"items": { "type": "object" }
+						},
+						"sorts": {
+							"type": "array",
+							"maxItems": 1,
+							"items": { "type": "object" }
+						},
+						"pageSize": { "type": "integer", "minimum": 1, "maximum": 200 },
+						"limit": { "type": "integer", "minimum": 1, "maximum": 10000 }
+					}
+				},
+				"examples": [
+					{
+						"input": {
+							"objectType": "contacts",
+							"properties": ["email", "lifecyclestage"],
+							"filterGroups": [
+								{
+									"filters": [
+										{
+											"propertyName": "lifecyclestage",
+											"operator": "EQ",
+											"value": "customer"
+										}
+									]
+								}
+							],
+							"limit": 200
+						},
+						"command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.objects.search --input @request.json --out hubspot-contact-search.json --dry-run"
+					}
+				]
+			}
+		},
+		{
+			"path": "/crm/objects/2026-03/{objectType}/{recordId}",
+			"method": "patch",
+			"operationId": "crm.objects.update",
+			"exposure": "inventory",
+			"reason": "Mutation is outside the read-only HubSpot V1 provider."
+		},
+		{
+			"path": "/crm/objects/2026-03/{objectType}/{recordId}",
+			"method": "delete",
+			"operationId": "crm.objects.archive",
+			"exposure": "inventory",
+			"reason": "Destructive mutation is outside the read-only HubSpot V1 provider."
+		},
+		{
+			"path": "/crm/objects/2026-03/{fromObjectType}/{objectId}/associations/{toObjectType}",
+			"method": "get",
+			"operationId": "crm.associations.list",
+			"exposure": "executable",
+			"capability": {
+				"id": "hubspot.crm.associations.list",
+				"provider": "hubspot",
+				"revision": "1",
+				"adapterKey": "crm.associations.list",
+				"title": "List record associations",
+				"description": "List bounded associations from one reviewed CRM record to one reviewed object type.",
+				"effects": ["read"],
+				"inputSchema": {
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["fromObjectType", "objectId", "toObjectType", "limit"],
+					"properties": {
+						"fromObjectType": {
+							"enum": ["companies", "contacts", "deals", "tickets"]
+						},
+						"objectId": { "type": "string", "pattern": "^[1-9]\\d{0,19}$" },
+						"toObjectType": {
+							"enum": ["companies", "contacts", "deals", "tickets"]
+						},
+						"pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+						"limit": { "type": "integer", "minimum": 1, "maximum": 5000 }
+					}
+				},
+				"examples": [
+					{
+						"input": {
+							"fromObjectType": "contacts",
+							"objectId": "123",
+							"toObjectType": "companies",
+							"limit": 100
+						},
+						"command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.associations.list --input @request.json --out hubspot-associations.json --dry-run"
+					}
+				]
+			}
+		},
+		{
+			"path": "/crm/objects/2026-03/{fromObjectType}/{objectId}/associations/default/{toObjectType}/{toObjectId}",
+			"method": "put",
+			"operationId": "crm.associations.create",
+			"exposure": "inventory",
+			"reason": "Mutation is outside the read-only HubSpot V1 provider."
+		},
+		{
+			"path": "/crm/objects/2026-03/{fromObjectType}/{objectId}/associations/{toObjectType}/{toObjectId}",
+			"method": "delete",
+			"operationId": "crm.associations.delete",
+			"exposure": "inventory",
+			"reason": "Destructive mutation is outside the read-only HubSpot V1 provider."
+		},
+		{
+			"path": "/events/event-occurrences/2026-03",
+			"method": "get",
+			"operationId": "events.occurrences.list",
+			"exposure": "executable",
+			"capability": {
+				"id": "hubspot.events.occurrences.list",
+				"provider": "hubspot",
+				"revision": "1",
+				"adapterKey": "events.occurrences.list",
+				"title": "List event occurrences",
+				"description": "List bounded HubSpot event occurrences within an explicit time window.",
+				"effects": ["read"],
+				"inputSchema": {
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"additionalProperties": false,
+					"required": [
+						"occurredAfter",
+						"occurredBefore",
+						"properties",
+						"limit"
+					],
+					"properties": {
+						"occurredAfter": {
+							"type": "string",
+							"format": "date-time",
+							"maxLength": 64
+						},
+						"occurredBefore": {
+							"type": "string",
+							"format": "date-time",
+							"maxLength": 64
+						},
+						"eventType": { "type": "string", "minLength": 1, "maxLength": 200 },
+						"objectType": { "enum": ["company", "contact", "deal", "ticket"] },
+						"objectId": { "type": "string", "pattern": "^[1-9]\\d{0,19}$" },
+						"properties": {
+							"type": "array",
+							"minItems": 1,
+							"maxItems": 20,
+							"uniqueItems": true,
+							"items": {
+								"enum": [
+									"hs_browser",
+									"hs_city",
+									"hs_content_type",
+									"hs_country",
+									"hs_device_name",
+									"hs_device_type",
+									"hs_page_title",
+									"hs_referrer",
+									"hs_touchpoint_source",
+									"hs_url",
+									"hs_utm_campaign",
+									"hs_utm_medium",
+									"hs_utm_source"
+								]
+							}
+						},
+						"pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+						"limit": { "type": "integer", "minimum": 1, "maximum": 5000 }
+					}
+				},
+				"examples": [
+					{
+						"input": {
+							"occurredAfter": "2026-08-01T00:00:00Z",
+							"occurredBefore": "2026-08-02T00:00:00Z",
+							"eventType": "e_visited_page",
+							"properties": ["hs_url", "hs_page_title"],
+							"limit": 100
+						},
+						"command": "gkit --profile app-a hubspot api call --capability-id hubspot.events.occurrences.list --input @request.json --out hubspot-events.json --dry-run"
+					}
+				]
+			}
+		},
+		{
+			"path": "/events/2026-03/send",
+			"method": "post",
+			"operationId": "events.occurrences.send",
+			"exposure": "inventory",
+			"reason": "Event sending is outside the read-only HubSpot V1 provider."
+		},
+		{
+			"path": "/crm/pipelines/2026-03/{objectType}",
+			"method": "get",
+			"operationId": "crm.pipelines.list",
+			"exposure": "executable",
+			"capability": {
+				"id": "hubspot.crm.pipelines.list",
+				"provider": "hubspot",
+				"revision": "1",
+				"adapterKey": "crm.pipelines.list",
+				"title": "List CRM pipelines",
+				"description": "List pipelines and stages for deals or tickets.",
+				"effects": ["read"],
+				"inputSchema": {
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["objectType"],
+					"properties": { "objectType": { "enum": ["deals", "tickets"] } }
+				},
+				"examples": [
+					{
+						"input": { "objectType": "deals" },
+						"command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.pipelines.list --input '{\"objectType\":\"deals\"}' --out hubspot-deal-pipelines.json --dry-run"
+					}
+				]
+			}
+		},
+		{
+			"path": "/crm/pipelines/2026-03/{objectType}",
+			"method": "post",
+			"operationId": "crm.pipelines.create",
+			"exposure": "inventory",
+			"reason": "Mutation is outside the read-only HubSpot V1 provider."
+		},
+		{
+			"path": "/crm/pipelines/2026-03/{objectType}/{pipelineId}",
+			"method": "delete",
+			"operationId": "crm.pipelines.delete",
+			"exposure": "inventory",
+			"reason": "Destructive mutation is outside the read-only HubSpot V1 provider."
+		},
+		{
+			"path": "/crm/owners/2026-03",
+			"method": "get",
+			"operationId": "crm.owners.list",
+			"exposure": "executable",
+			"capability": {
+				"id": "hubspot.crm.owners.list",
+				"provider": "hubspot",
+				"revision": "1",
+				"adapterKey": "crm.owners.list",
+				"title": "List CRM owners",
+				"description": "List bounded active or archived HubSpot owners for attribution joins.",
+				"effects": ["read"],
+				"inputSchema": {
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["limit"],
+					"properties": {
+						"archived": { "type": "boolean" },
+						"pageSize": { "type": "integer", "minimum": 1, "maximum": 100 },
+						"limit": { "type": "integer", "minimum": 1, "maximum": 5000 }
+					}
+				},
+				"examples": [
+					{
+						"input": { "limit": 100 },
+						"command": "gkit --profile app-a hubspot api call --capability-id hubspot.crm.owners.list --input '{\"limit\":100}' --out hubspot-owners.json --dry-run"
+					}
+				]
+			}
+		},
+		{
+			"path": "/crm/imports/2026-03/imports",
+			"method": "post",
+			"operationId": "crm.imports.create",
+			"exposure": "inventory",
+			"reason": "Imports are mutations and are outside the read-only HubSpot V1 provider."
+		}
+	]
 }

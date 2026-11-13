@@ -17,13 +17,13 @@ resource: ../../../docs/plans/2026-07-13-gkit-vertical-slice-plan.md
 `bun run --filter gkit eval:slice5` passed the committed answer keys and
 observations:
 
-| Metric | Result | Gate |
-| --- | ---: | ---: |
-| Task distribution | 10 explicit / 15 business / 10 long-tail / 5 negative | exact |
-| Provider top-1 | 100% (35/35) | at least 95% |
-| Discovery within two steps | 100% (35/35) | at least 90% |
-| First executable command | 100% (33/33) | at least 90% |
-| Negative precision | 100% (5/5) | at least 95% |
+| Metric                     |                                                Result |         Gate |
+| -------------------------- | ----------------------------------------------------: | -----------: |
+| Task distribution          | 10 explicit / 15 business / 10 long-tail / 5 negative |        exact |
+| Provider top-1             |                                          100% (35/35) | at least 95% |
+| Discovery within two steps |                                          100% (35/35) | at least 90% |
+| First executable command   |                                          100% (33/33) | at least 90% |
+| Negative precision         |                                            100% (5/5) | at least 95% |
 
 Two positive tasks are inventory-only DataForSEO LLM Mention requests, so they
 correctly have no executable-command denominator. All 33 executable positive

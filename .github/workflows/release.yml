@@ -36,6 +36,11 @@ jobs:
           fetch-tags: true
           persist-credentials: false
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -70,13 +75,9 @@ jobs:
         if: steps.preflight.outputs.release == 'true'
         run: bun install --frozen-lockfile
 
-      - name: Check types
+      - name: Check
         if: steps.preflight.outputs.release == 'true'
-        run: bun run check-types
-
-      - name: Test
-        if: steps.preflight.outputs.release == 'true'
-        run: bun run test
+        run: bun run check
 
       - name: Evaluate agent contract
         if: steps.preflight.outputs.release == 'true'

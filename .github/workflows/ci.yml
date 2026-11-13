@@ -23,6 +23,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -38,11 +43,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Check types
-        run: bun run check-types
-
-      - name: Test
-        run: bun run test
+      - name: Check
+        run: bun run check
 
       - name: Evaluate agent contract
         run: bun run eval

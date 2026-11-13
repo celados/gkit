@@ -84,38 +84,38 @@ Provider execution must bind exactly one App profile. Create one JSON file at
 
 ```json
 {
-  "version": 1,
-  "name": "my-app",
-  "providers": {
-    "posthog": {
-      "config": {
-        "host": "https://us.posthog.com",
-        "projectId": "12345"
-      },
-      "secrets": {
-        "apiToken": "env:MY_APP_POSTHOG_TOKEN"
-      }
-    },
-    "gsc": {
-      "config": {
-        "siteUrl": "sc-domain:example.com"
-      },
-      "secrets": {
-        "serviceAccountFile": "env:MY_APP_GSC_SERVICE_ACCOUNT_FILE"
-      }
-    },
-    "hubspot": {
-      "config": {},
-      "secrets": {
-        "accessToken": "env:MY_APP_HUBSPOT_ACCESS_TOKEN"
-      }
-    },
-    "pagespeed": {
-      "secrets": {
-        "apiKey": "env:MY_APP_PAGESPEED_API_KEY"
-      }
-    }
-  }
+	"version": 1,
+	"name": "my-app",
+	"providers": {
+		"posthog": {
+			"config": {
+				"host": "https://us.posthog.com",
+				"projectId": "12345"
+			},
+			"secrets": {
+				"apiToken": "env:MY_APP_POSTHOG_TOKEN"
+			}
+		},
+		"gsc": {
+			"config": {
+				"siteUrl": "sc-domain:example.com"
+			},
+			"secrets": {
+				"serviceAccountFile": "env:MY_APP_GSC_SERVICE_ACCOUNT_FILE"
+			}
+		},
+		"hubspot": {
+			"config": {},
+			"secrets": {
+				"accessToken": "env:MY_APP_HUBSPOT_ACCESS_TOKEN"
+			}
+		},
+		"pagespeed": {
+			"secrets": {
+				"apiKey": "env:MY_APP_PAGESPEED_API_KEY"
+			}
+		}
+	}
 }
 ```
 
@@ -279,7 +279,6 @@ Development dependencies include `@celados/argc` from the private team registry 
 
 ```bash
 bun run eval
-bun run check-types
-bun run test
+bun run check
 bun run verify:package
 ```

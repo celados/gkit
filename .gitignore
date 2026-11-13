@@ -11,3 +11,4 @@ coverage
 *.tgz
 
 .npmrc
+.claude/worktrees/

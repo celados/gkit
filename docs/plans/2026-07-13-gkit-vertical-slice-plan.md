@@ -58,35 +58,35 @@ Profile 文件:`$XDG_CONFIG_HOME/gkit/profiles/<name>.json`(未设置时 `~/.con
 
 ```json
 {
-  "version": 1,
-  "name": "app-a",
-  "providers": {
-    "dataforseo": {
-      "config": {},
-      "policy": { "maxSpendUsdPerCall": "0.50" },
-      "secrets": {
-        "login": "env:APP_A_DATAFORSEO_LOGIN",
-        "password": "env:APP_A_DATAFORSEO_PASSWORD"
-      }
-    },
-    "posthog": {
-      "config": { "host": "https://us.posthog.com", "projectId": "12345" },
-      "secrets": { "apiToken": "env:APP_A_POSTHOG_TOKEN" }
-    },
-    "gsc": {
-      "config": { "siteUrl": "sc-domain:app-a.com" },
-      "secrets": { "credentialsJson": "env:APP_A_GSC_CREDENTIALS_JSON" }
-    },
-    "google-ads": {
-      "config": {
-        "customerId": "1234567890"
-      },
-      "secrets": {
-        "developerToken": "env:APP_A_GOOGLE_ADS_DEVELOPER_TOKEN",
-        "serviceAccountFile": "env:APP_A_GOOGLE_ADS_SERVICE_ACCOUNT_FILE"
-      }
-    }
-  }
+	"version": 1,
+	"name": "app-a",
+	"providers": {
+		"dataforseo": {
+			"config": {},
+			"policy": { "maxSpendUsdPerCall": "0.50" },
+			"secrets": {
+				"login": "env:APP_A_DATAFORSEO_LOGIN",
+				"password": "env:APP_A_DATAFORSEO_PASSWORD"
+			}
+		},
+		"posthog": {
+			"config": { "host": "https://us.posthog.com", "projectId": "12345" },
+			"secrets": { "apiToken": "env:APP_A_POSTHOG_TOKEN" }
+		},
+		"gsc": {
+			"config": { "siteUrl": "sc-domain:app-a.com" },
+			"secrets": { "credentialsJson": "env:APP_A_GSC_CREDENTIALS_JSON" }
+		},
+		"google-ads": {
+			"config": {
+				"customerId": "1234567890"
+			},
+			"secrets": {
+				"developerToken": "env:APP_A_GOOGLE_ADS_DEVELOPER_TOKEN",
+				"serviceAccountFile": "env:APP_A_GOOGLE_ADS_SERVICE_ACCOUNT_FILE"
+			}
+		}
+	}
 }
 ```
 
@@ -117,19 +117,19 @@ Effect 不可按 HTTP method 推断(GSC Search Analytics 是 POST+read;DataForSE
 
 ```json
 {
-  "ok": true,
-  "data": {},
-  "meta": {
-    "profile": "app-a",
-    "provider": "dataforseo",
-    "capability": "dataforseo.backlinks.bulk_ranks.live",
-    "effects": ["read", "spend"],
-    "cost": { "amount": "0.020000", "currency": "USD" },
-    "artifact": null,
-    "attemptId": "01J...",
-    "spendOutcome": "confirmed_charged",
-    "providerRequestId": "provider-request-id"
-  }
+	"ok": true,
+	"data": {},
+	"meta": {
+		"profile": "app-a",
+		"provider": "dataforseo",
+		"capability": "dataforseo.backlinks.bulk_ranks.live",
+		"effects": ["read", "spend"],
+		"cost": { "amount": "0.020000", "currency": "USD" },
+		"artifact": null,
+		"attemptId": "01J...",
+		"spendOutcome": "confirmed_charged",
+		"providerRequestId": "provider-request-id"
+	}
 }
 ```
 
@@ -137,15 +137,15 @@ Effect 不可按 HTTP method 推断(GSC Search Analytics 是 POST+read;DataForSE
 
 ```json
 {
-  "ok": false,
-  "error": {
-    "code": "EFFECT_NOT_ALLOWED",
-    "message": "This capability can spend provider credits.",
-    "hint": "Review the request, then rerun with --allow-spend.",
-    "retryable": false,
-    "outcome": "not_dispatched",
-    "details": null
-  }
+	"ok": false,
+	"error": {
+		"code": "EFFECT_NOT_ALLOWED",
+		"message": "This capability can spend provider credits.",
+		"hint": "Review the request, then rerun with --allow-spend.",
+		"retryable": false,
+		"outcome": "not_dispatched",
+		"details": null
+	}
 }
 ```
 
@@ -241,13 +241,13 @@ gkit docs [--provider <p>]             # 打印文档目录路径,agent 自行 r
 
 ## 4. Provider 映射(全部 in-process TypeScript)
 
-| Provider       | Contract 来源                                                                                                   | 执行面                                                                                  | 认证                                                                                     |
-| -------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| DataForSEO     | 官方 OpenAPI(pinned)                                                                                            | `api call --operation-id <id> --input @req.json`                                        | basic auth(login/password)                                                               |
-| GSC            | Google Discovery                                                                                                | `search-analytics query` 等 resource/method                                             | service account JSON                                                                     |
-| PostHog        | Query API + OpenAPI reads                                                                                       | `query hogql --input @query.json`                                                       | personal API token                                                                       |
+| Provider       | Contract 来源                                                                                                   | 执行面                                                                                  | 认证                                                                                                     |
+| -------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| DataForSEO     | 官方 OpenAPI(pinned)                                                                                            | `api call --operation-id <id> --input @req.json`                                        | basic auth(login/password)                                                                               |
+| GSC            | Google Discovery                                                                                                | `search-analytics query` 等 resource/method                                             | service account JSON                                                                                     |
+| PostHog        | Query API + OpenAPI reads                                                                                       | `query hogql --input @query.json`                                                       | personal API token                                                                                       |
 | Google Ads     | 官方 REST reference(`googleAds:search`、`googleAdsFields:search`、Keyword Plan services),固定 API major version | `query gaql`(默认显式分页)、`fields search/describe`、经保留决策的 Keyword Planner read | service-account JSON(当前 profile)或 OAuth2 refresh token + developer token;access token 作为派生 secret |
-| Bing Webmaster | 现有 JSON REST API contract,WSDL 仅在 REST 不覆盖时考虑                                                         | provider method + native input                                                          | 现有 API key 走 `apikey` query parameter(完整 URL 永不打印);未来采用 OAuth 时才用 Bearer |
+| Bing Webmaster | 现有 JSON REST API contract,WSDL 仅在 REST 不覆盖时考虑                                                         | provider method + native input                                                          | 现有 API key 走 `apikey` query parameter(完整 URL 永不打印);未来采用 OAuth 时才用 Bearer                 |
 
 关于 Google Ads 的决策:v1 的 bounded read surface 走 REST;默认使用可控的 `googleAds:search` 分页,不以 `searchStream` 一次吞入任意大结果。Slice 1.5 已用真实账号覆盖 service-account OAuth、field metadata、request ID/error projection、分页和当前 Keyword Planner 用法;真实 profile 没有 MCC,因此 manager account header 仍是暴露该能力前的独立 live gate。当前唯一消费者的单账户 surface 不被这个缺口阻断。未来若开放 mutate、REST 无法覆盖必需能力或引入不可信依赖,再设计 polyglot/isolated runtime。
 
@@ -342,29 +342,29 @@ Raw dogfood event 已追加到 `$XDG_STATE_HOME/gkit/dogfood/events.jsonl`（未
 
 ```json
 {
-  "ts": "<iso8601>",
-  "windowId": "slice1-2026-07-14",
-  "taskId": "<stable-id>",
-  "kind": "explicit_provider|business_goal|negative",
-  "eligible": true,
-  "route": "gkit|legacy_keep|blocked|break_glass",
-  "profile": "clonesite.ai|null",
-  "capability": "<id|null>",
-  "targetCount": 1,
-  "discoverySteps": 0,
-  "firstExecutableCommandCorrect": true,
-  "paidDispatch": false,
-  "providerNetworkCalls": 0,
-  "attemptId": null,
-  "artifactBytes": null,
-  "artifactSha256": null,
-  "externalMaxCostMicros": null,
-  "externalActualCostMicros": null,
-  "externalEvidenceRef": null,
-  "result": "success|safe_block|failure",
-  "artifactUsedDownstream": false,
-  "fallbackReason": null,
-  "friction": null
+	"ts": "<iso8601>",
+	"windowId": "slice1-2026-07-14",
+	"taskId": "<stable-id>",
+	"kind": "explicit_provider|business_goal|negative",
+	"eligible": true,
+	"route": "gkit|legacy_keep|blocked|break_glass",
+	"profile": "clonesite.ai|null",
+	"capability": "<id|null>",
+	"targetCount": 1,
+	"discoverySteps": 0,
+	"firstExecutableCommandCorrect": true,
+	"paidDispatch": false,
+	"providerNetworkCalls": 0,
+	"attemptId": null,
+	"artifactBytes": null,
+	"artifactSha256": null,
+	"externalMaxCostMicros": null,
+	"externalActualCostMicros": null,
+	"externalEvidenceRef": null,
+	"result": "success|safe_block|failure",
+	"artifactUsedDownstream": false,
+	"fallbackReason": null,
+	"friction": null
 }
 ```
 

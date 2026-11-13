@@ -20,12 +20,12 @@ negative tasks made no provider calls and added no ledger attempts.
 
 ## Results
 
-| Task | Kind | Discovery | Provider calls | Result | Cost |
-| --- | --- | ---: | ---: | --- | ---: |
-| `no_spend_negative` | negative | 1 step | 0 | discovery only; safely blocked | `$0` |
-| `unsupported_mutation_negative` | negative | 1 step | 0 | exit 1, `CAPABILITY_NOT_FOUND`, `not_dispatched` | `$0` |
-| `dfs_bulk_ranks_explicit` | explicit provider | 1 step | 1 | first live attempt succeeded | `$0.024072` |
-| `compare_domain_authority_goal` | business goal | 2 steps | 1 | first live attempt succeeded | `$0.024108` |
+| Task                            | Kind              | Discovery | Provider calls | Result                                           |        Cost |
+| ------------------------------- | ----------------- | --------: | -------------: | ------------------------------------------------ | ----------: |
+| `no_spend_negative`             | negative          |    1 step |              0 | discovery only; safely blocked                   |        `$0` |
+| `unsupported_mutation_negative` | negative          |    1 step |              0 | exit 1, `CAPABILITY_NOT_FOUND`, `not_dispatched` |        `$0` |
+| `dfs_bulk_ranks_explicit`       | explicit provider |    1 step |              1 | first live attempt succeeded                     | `$0.024072` |
+| `compare_domain_authority_goal` | business goal     |   2 steps |              1 | first live attempt succeeded                     | `$0.024108` |
 
 Authorized exposure and actual cost were both `$0.048180`, below the `$0.15`
 gate cap.

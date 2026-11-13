@@ -6,7 +6,7 @@ description: >
   contacting, and learning from paid Clonesite customers.
 status: conditional-pass # conditional-pass | passed | failed
 version: 1.0
-generated: { by: codex/gpt-5, at: "2026-08-14T21:30:00+08:00" }
+generated: { by: codex/gpt-5, at: '2026-08-14T21:30:00+08:00' }
 tags: [gkit, growth-workspace, gmail, posthog, clonesite, dogfood]
 ---
 
@@ -81,15 +81,15 @@ commercial outcome.
 
 ## Acceptance gates
 
-| Gate | Passing evidence |
-| --- | --- |
-| Eligibility | Product state supports the selected cohort and exclusions |
-| Contact safety | No refund, suppression, active support conflict, or duplicate direct thread |
-| Personalization | PostHog context is bounded, identity-grounded, and not exposed as surveillance |
-| Copy | One primary question, founder voice, verified preview URL, truthful service scope |
-| Authority | Draft and send permissions are explicit and separate |
-| Send | Intended recipient, subject, thread, and `SENT` label read back from Gmail |
-| Evaluation | Reply, bounce, complaint, later Product outcome, and service interest tracked separately |
+| Gate            | Passing evidence                                                                         |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| Eligibility     | Product state supports the selected cohort and exclusions                                |
+| Contact safety  | No refund, suppression, active support conflict, or duplicate direct thread              |
+| Personalization | PostHog context is bounded, identity-grounded, and not exposed as surveillance           |
+| Copy            | One primary question, founder voice, verified preview URL, truthful service scope        |
+| Authority       | Draft and send permissions are explicit and separate                                     |
+| Send            | Intended recipient, subject, thread, and `SENT` label read back from Gmail               |
+| Evaluation      | Reply, bounce, complaint, later Product outcome, and service interest tracked separately |
 
 ## Product findings, not workflow facts
 
