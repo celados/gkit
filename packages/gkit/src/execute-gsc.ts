@@ -21,7 +21,7 @@ import { deriveGscAccessToken } from './providers/gsc-auth'
 
 type GscCallCommand = Extract<ParsedCommand, { kind: 'gsc-call' }>
 
-export const gscAdapterKeys = new Set([
+const gscAdapterKeys = new Set([
 	'properties.list',
 	'search-analytics.query',
 	'sitemaps.list',

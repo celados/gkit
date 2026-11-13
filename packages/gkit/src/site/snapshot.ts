@@ -64,7 +64,7 @@ export function makeSnapshot(
 		pages: sorted,
 	}
 }
-export function encodePages(pages: PageSnapshot[]): string {
+function encodePages(pages: PageSnapshot[]): string {
 	return pages.map((page) => JSON.stringify(page) + '\n').join('')
 }
 export async function writeSnapshot(

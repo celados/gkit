@@ -15,7 +15,7 @@ import { siteRouter } from './site/schema'
 
 const s = toStandardJsonSchema
 
-export const providerNames = [
+const providerNames = [
 	'dataforseo',
 	'bing',
 	'posthog',
@@ -26,7 +26,7 @@ export const providerNames = [
 ] as const
 const providerName = v.picklist(providerNames)
 
-export function buildGkitSchema(
+function buildGkitSchema(
 	manifest: LoadedExecutableManifest | readonly LoadedExecutableManifest[],
 	{ compact = false }: { compact?: boolean } = {},
 ): Router {

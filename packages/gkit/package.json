@@ -31,8 +31,8 @@
 		"generate:posthog": "bun run ./scripts/generate-posthog.ts",
 		"generate:posthog:check": "bun run ./scripts/generate-posthog.ts --check",
 		"eval:slice5": "bun run ./src/eval.ts",
-		"test": "vitest",
-		"test:once": "vitest run && bun run test:site",
+		"test": "vp test",
+		"test:once": "vp test run && bun run test:site",
 		"test:site": "bun run ./scripts/test-site-snapshot.ts",
 		"generate:check": "bun run generate:dataforseo:check && bun run generate:bing:check && bun run generate:google-ads:check && bun run generate:gsc:check && bun run generate:hubspot:check && bun run generate:pagespeed:check && bun run generate:posthog:check"
 	},
@@ -49,7 +49,7 @@
 		"google-auth-library": "^10.9.0",
 		"robots-parser": "3.0.1",
 		"saxes": "6.0.0",
-		"typescript": "catalog:",
+		"typescript": "^7.0.2",
 		"valibot": "^1.2.0",
 		"vitest": "^4.0.18",
 		"yaml": "^2.9.0"

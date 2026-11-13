@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import * as v from 'valibot'
 
-export const digestSchema = v.pipe(v.string(), v.regex(/^[a-f0-9]{64}$/))
+const digestSchema = v.pipe(v.string(), v.regex(/^[a-f0-9]{64}$/))
 export const webUrl = v.pipe(
 	v.string(),
 	v.url(),
@@ -64,7 +64,7 @@ export const siteConfigSchema = v.strictObject({
 	}),
 })
 export type SiteConfig = v.InferOutput<typeof siteConfigSchema>
-export const fieldsSchema = v.strictObject({
+const fieldsSchema = v.strictObject({
 	title: v.string(),
 	description: v.string(),
 	h1: v.array(v.string()),
@@ -102,7 +102,7 @@ export type Finding = {
 	detail: string
 	severity: 'error' | 'warning'
 }
-export const versionSchema = v.strictObject({
+const versionSchema = v.strictObject({
 	repository: v.string(),
 	commit_sha: v.pipe(v.string(), v.regex(/^[a-f0-9]{40}$/)),
 	ref: v.string(),
@@ -113,7 +113,7 @@ export const versionSchema = v.strictObject({
 	]),
 })
 export type SourceVersion = v.InferOutput<typeof versionSchema>
-export const sourceSchema = v.variant('kind', [
+const sourceSchema = v.variant('kind', [
 	v.strictObject({
 		kind: v.literal('nuxt-build'),
 		build_digest: digestSchema,

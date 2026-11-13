@@ -279,7 +279,6 @@ Development dependencies include `@celados/argc` from the private team registry 
 
 ```bash
 bun run eval
-bun run check-types
-bun run test
+bun run check
 bun run verify:package
 ```

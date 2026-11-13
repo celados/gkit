@@ -34,7 +34,7 @@ const nonNegativeSafeInteger = pipe(
 	maxValue(Number.MAX_SAFE_INTEGER),
 )
 
-export const effectSchema = picklist(['read', 'spend', 'write', 'destructive'])
+const effectSchema = picklist(['read', 'spend', 'write', 'destructive'])
 
 const manifestExampleSchema = strictObject({
 	title: optional(nonEmptyString),
@@ -73,7 +73,7 @@ const capabilityCostSchema = strictObject({
 	]),
 })
 
-export const manifestRecordSchema = pipe(
+const manifestRecordSchema = pipe(
 	strictObject({
 		id: nonEmptyString,
 		provider: nonEmptyString,
@@ -105,7 +105,7 @@ const manifestSourceSchema = strictObject({
 	checksum: nonEmptyString,
 })
 
-export const executableManifestSchema = strictObject({
+const executableManifestSchema = strictObject({
 	version: literal(1),
 	provider: nonEmptyString,
 	revision: nonEmptyString,

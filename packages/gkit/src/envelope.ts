@@ -1,6 +1,8 @@
 import { Buffer } from 'node:buffer'
 
-export const errorCodes = [
+import type { ArtifactReceipt } from './artifact'
+
+const errorCodes = [
 	'CAPABILITY_NOT_FOUND',
 	'INVALID_INPUT',
 	'PROFILE_ERROR',
@@ -23,12 +25,6 @@ export type SpendOutcome =
 	| 'confirmed_charged'
 	| 'confirmed_not_charged'
 	| 'unknown'
-
-export type ArtifactReceipt = {
-	path: string
-	bytes: number
-	sha256: string
-}
 
 export type SpendMeta = {
 	outcome: SpendOutcome

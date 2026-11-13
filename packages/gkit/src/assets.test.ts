@@ -22,7 +22,7 @@ describe('embedded assets', () => {
 		// Read as text: vitest cannot import the bun text-import module itself.
 		const embedded = [
 			...readFileSync(`${root}src/assets.embed.ts`, 'utf8').matchAll(
-				/^ {2}"([^"]+)":/gm,
+				/^\s+['"]([^'"]+)['"]:/gm,
 			),
 		].map((match) => match[1])
 		expect(embedded.sort()).toEqual(onDisk)

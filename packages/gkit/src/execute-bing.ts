@@ -13,7 +13,7 @@ import {
 
 type BingCallCommand = Extract<ParsedCommand, { kind: 'bing-call' }>
 
-export const bingAdapterKeys = new Set([
+const bingAdapterKeys = new Set([
 	'sites.list',
 	'traffic.rank',
 	'traffic.queries',

@@ -9,6 +9,8 @@ import {
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 
+import type { SpendOutcome } from './envelope'
+
 import { canonicalJson } from './canonical'
 
 const SCHEMA_VERSION = 1
@@ -22,11 +24,6 @@ export type ProviderResult =
 	| 'succeeded'
 	| 'failed'
 	| 'not_dispatched'
-	| 'unknown'
-
-export type SpendOutcome =
-	| 'confirmed_charged'
-	| 'confirmed_not_charged'
 	| 'unknown'
 
 export type SettlementSource = 'automatic' | 'manual'
@@ -412,7 +409,7 @@ export async function recordArtifact(
 	)
 }
 
-export function findSpendBlockers(
+function findSpendBlockers(
 	snapshot: JournalSnapshot,
 	query: SpendBlockerQuery,
 ): readonly SpendBlocker[] {
@@ -457,7 +454,7 @@ export function findSpendBlockers(
 	return blockers.sort(compareBlockers)
 }
 
-export function projectState(
+function projectState(
 	latestSettlement: AttemptSettledEvent | null,
 	artifact: JournalArtifact | null,
 ): OperationState {

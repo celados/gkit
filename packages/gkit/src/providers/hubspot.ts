@@ -26,8 +26,8 @@ type HubSpotRequestDefinition = Readonly<{
 type ObjectType = 'companies' | 'contacts' | 'deals' | 'tickets'
 type EventObjectType = 'company' | 'contact' | 'deal' | 'ticket'
 
-export const defaultHubSpotTimeoutMs = 30_000
-export const hubSpotApiOrigin = 'https://api.hubapi.com'
+const defaultHubSpotTimeoutMs = 30_000
+const hubSpotApiOrigin = 'https://api.hubapi.com'
 
 const objectTypes = new Set<ObjectType>([
 	'companies',
@@ -73,7 +73,7 @@ const searchOperators = new Set([
 	'NOT_IN',
 ])
 
-export const hubSpotPropertyAllowlist: Readonly<
+const hubSpotPropertyAllowlist: Readonly<
 	Record<ObjectType, ReadonlySet<string>>
 > = Object.freeze({
 	contacts: new Set([

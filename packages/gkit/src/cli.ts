@@ -21,6 +21,7 @@ import {
 	parseUsdMicros,
 	SecretRegistry,
 	serializeEnvelope,
+	type SpendOutcome,
 	toFailureEnvelope,
 } from './envelope'
 import { executeDataForSeoCall } from './execute'
@@ -35,7 +36,6 @@ import {
 	JournalError,
 	readJournal,
 	settleAttempt,
-	type SpendOutcome,
 } from './journal'
 import { loadExecutableManifest } from './manifest'
 import {

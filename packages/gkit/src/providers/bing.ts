@@ -2,8 +2,8 @@ import { Buffer } from 'node:buffer'
 
 import type { RawJsonDispatchResult } from './raw-json'
 
-export const bingBaseUrl = 'https://ssl.bing.com/webmaster/api.svc/json'
-export const defaultBingTimeoutMs = 30_000
+const bingBaseUrl = 'https://ssl.bing.com/webmaster/api.svc/json'
+const defaultBingTimeoutMs = 30_000
 
 export type BingConfig = Readonly<{ siteUrl?: string }>
 export type BingCredentials = Readonly<{ apiKey: string }>

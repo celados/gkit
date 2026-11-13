@@ -2,10 +2,10 @@ import { Buffer } from 'node:buffer'
 
 import type { RawJsonDispatchResult } from './raw-json'
 
-export const pageSpeedEndpoint =
+const pageSpeedEndpoint =
 	'https://www.googleapis.com/pagespeedonline/v5/runPagespeed'
 // Lighthouse runs routinely take 20–40 seconds on the provider side.
-export const defaultPageSpeedTimeoutMs = 60_000
+const defaultPageSpeedTimeoutMs = 60_000
 
 export type PageSpeedConfig = Readonly<Record<string, never>>
 export type PageSpeedCredentials = Readonly<{ apiKey: string | null }>
@@ -18,7 +18,7 @@ export type PageSpeedFetch = (
 	init?: RequestInit,
 ) => Promise<Response>
 
-export type PageSpeedCategory =
+type PageSpeedCategory =
 	| 'performance'
 	| 'seo'
 	| 'accessibility'
@@ -185,7 +185,7 @@ export async function dispatchPageSpeed(options: {
 }
 
 /** Compact, non-authoritative summary; the raw response artifact stays the Evidence. */
-export function summarizePageSpeed(
+function summarizePageSpeed(
 	payload: unknown,
 	diagnosticUrl: string,
 ): Record<string, unknown> {

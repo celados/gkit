@@ -13,7 +13,7 @@ export type GscFetch = (
 	init?: RequestInit,
 ) => Promise<Response>
 
-export const defaultGscTimeoutMs = 30_000
+const defaultGscTimeoutMs = 30_000
 const webmastersOrigin = 'https://www.googleapis.com/webmasters/v3'
 const inspectionEndpoint =
 	'https://searchconsole.googleapis.com/v1/urlInspection/index:inspect'

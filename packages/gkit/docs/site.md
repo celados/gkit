@@ -150,4 +150,4 @@ The earlier unshipped `sync`, `releases`, `findings`, and `export` ledger comman
 
 # Validation
 
-From the repository root: `bun run check-types`, `bun run test`, and `bun run verify:package`. The package check installs the tarball in an isolated directory and loads discovery with an isolated profile, without network capture. Current validation includes 190 tests and 15 CLI scenarios covering static/SSR capture, relocation, offline audit/diff, coverage, corruption, output reservation, exact Git input, and disposable caching. Real Nuxt 4.4.2 build evidence lives in the product workspace, outside this generic package.
+From the repository root: `bun run check` and `bun run verify:package`. The package check installs the tarball in an isolated directory and loads discovery with an isolated profile, without network capture. Current validation includes 190 tests and 15 CLI scenarios covering static/SSR capture, relocation, offline audit/diff, coverage, corruption, output reservation, exact Git input, and disposable caching. Real Nuxt 4.4.2 build evidence lives in the product workspace, outside this generic package.

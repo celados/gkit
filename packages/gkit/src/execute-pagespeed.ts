@@ -14,7 +14,7 @@ import {
 
 type PageSpeedCallCommand = Extract<ParsedCommand, { kind: 'pagespeed-call' }>
 
-export const pageSpeedAdapterKeys = new Set(['run'])
+const pageSpeedAdapterKeys = new Set(['run'])
 
 export async function executePageSpeedCall(options: {
 	command: PageSpeedCallCommand

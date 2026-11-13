@@ -15,7 +15,7 @@ import {
 
 type HubSpotCallCommand = Extract<ParsedCommand, { kind: 'hubspot-call' }>
 
-export const hubSpotAdapterKeys = new Set([
+const hubSpotAdapterKeys = new Set([
 	'crm.associations.list',
 	'crm.objects.list',
 	'crm.objects.search',

@@ -17,7 +17,7 @@ export type DataForSeoBulkRanksInput = {
 	tag?: string
 }
 
-export type DataForSeoBacklinkSummaryInput = {
+type DataForSeoBacklinkSummaryInput = {
 	target: string
 	include_subdomains?: boolean
 	exclude_internal_backlinks?: boolean
@@ -27,7 +27,7 @@ export type DataForSeoBacklinkSummaryInput = {
 	tag?: string
 }
 
-export type DataForSeoReferringDomainsInput = {
+type DataForSeoReferringDomainsInput = {
 	target: string
 	limit: number
 	order_by?: string[]
@@ -38,7 +38,7 @@ export type DataForSeoReferringDomainsInput = {
 	tag?: string
 }
 
-export type DataForSeoSerpInput = {
+type DataForSeoSerpInput = {
 	keyword: string
 	location_code: number
 	language_code: string
@@ -48,7 +48,7 @@ export type DataForSeoSerpInput = {
 	tag?: string
 }
 
-export type DataForSeoLlmMentionsSearchInput = {
+type DataForSeoLlmMentionsSearchInput = {
 	target: Array<{
 		domain: string
 		search_filter?: 'include'

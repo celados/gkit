@@ -13,6 +13,7 @@ export async function deriveGscAccessToken(
 	credentials: JWTInput,
 	access: GscAccess = 'read',
 ): Promise<string> {
+	// oxlint-disable-next-line typescript/no-deprecated -- credentials are the operator's own service-account key from the profile, never an untrusted source
 	const auth = new GoogleAuth({ credentials, scopes: [gscScopes[access]] })
 	const client = await auth.getClient()
 	const tokenResult = await client.getAccessToken()

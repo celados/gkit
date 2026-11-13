@@ -123,7 +123,7 @@ async function fetchDocument(
 	}
 	throw new Error('Redirect limit exceeded')
 }
-export async function digestBuild(directory: string): Promise<string> {
+async function digestBuild(directory: string): Promise<string> {
 	const root = await realpath(directory)
 	const hash = createHash('sha256')
 	const walk = async (
