@@ -12,7 +12,6 @@ import {
 import type { ParsedCommand } from "./args";
 import { sha256CanonicalJson } from "./canonical";
 import {
-  type Envelope,
   type EnvelopeMeta,
   GkitFailure,
   SecretRegistry,
