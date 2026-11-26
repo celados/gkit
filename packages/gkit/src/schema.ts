@@ -4,6 +4,7 @@ import {
 	group,
 	selectSchema,
 	type Router,
+	type SelectorMatch,
 } from '@celados/argc'
 import { toStandardJsonSchema } from '@valibot/to-json-schema'
 import * as v from 'valibot'
@@ -276,13 +277,7 @@ export function renderGkitSchema(
 	const root = buildGkitSchema(manifest)
 	let selected: ReturnType<typeof selectSchema>
 	try {
-		const normalizedSelector =
-			selector.includes('-') && /^[a-z0-9-]+$/.test(selector)
-				? `.\"${selector}\"`
-				: selector.startsWith('.')
-					? selector
-					: `.${selector}`
-		selected = selectSchema(root, normalizedSelector, { depth: 4 })
+		selected = selectSchema(root, selector)
 	} catch {
 		throw new GkitFailure({
 			code: 'INVALID_INPUT',
@@ -295,7 +290,39 @@ export function renderGkitSchema(
 			message: `Schema selector ${selector} matched no commands.`,
 		})
 	}
-	return `${schemaPreamble()}${generateSchema(selected.schema, { name: 'gkit' })}\n`
+	return `${schemaPreamble()}${generateSchema(buildSelectedRouter(selected.matches), { name: 'gkit' })}\n`
+}
+
+function buildSelectedRouter(matches: readonly SelectorMatch[]): Router {
+	const root: Record<string, Router> = {}
+	const included = new Set<string>()
+	for (const match of matches) {
+		const hasIncludedAncestor = match.path
+			.slice(0, -1)
+			.some((_, index) =>
+				included.has(match.path.slice(0, index + 1).join('.')),
+			)
+		if (hasIncludedAncestor) continue
+		let cursor: Record<string, Router> = root
+		for (const segment of match.path.slice(0, -1)) {
+			const existing = cursor[segment]
+			if (
+				!existing ||
+				typeof existing !== 'object' ||
+				'~argc' in existing ||
+				'~argc.group' in existing
+			) {
+				cursor[segment] = {}
+			}
+			cursor = cursor[segment] as Record<string, Router>
+		}
+		const leaf = match.path.at(-1)
+		if (leaf) {
+			cursor[leaf] = match.node
+			included.add(match.path.join('.'))
+		}
+	}
+	return root
 }
 
 function schemaPreamble(): string {
