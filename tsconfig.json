@@ -1,0 +1,4 @@
+{
+	"extends": "@celados/harness/tsconfig/bun.json",
+	"include": ["vite.config.ts"]
+}
