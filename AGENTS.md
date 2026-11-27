@@ -77,7 +77,7 @@ user does not watch for this, so do it without being asked:
 1. After the release workflow for your change succeeds, check whether the tool is
    installed: `command -v gkit`. If it is not, stop here.
 2. Run `hq tool.update "{ tools: ['gkit'] }"`. It prints `before -> after`.
-3. Check your change with the installed binary, for example `gkit @schema` or the
+3. Check your change with the installed binary, for example `gkit --schema site` or the
    command you changed.
 4. Put the `before -> after` line in your final report.
 
