@@ -21,7 +21,7 @@ install command.
 
 ## Install
 
-Team machines install the standalone bundle (the bare `gkit` release asset, one executable JS file; embedded manifests and docs unpack to `~/.cache/gkit/assets/`) into `~/.local/bin` via the workspace `update-local-tool` skill. Anyone else:
+Team machines install the standalone bundle (the bare `gkit` release asset, one executable JS file; embedded manifests and docs unpack to `~/.cache/gkit/assets/`) into `~/.local/bin` via `hq tool.update`. Anyone else:
 
 Install the latest stable release globally:
 
