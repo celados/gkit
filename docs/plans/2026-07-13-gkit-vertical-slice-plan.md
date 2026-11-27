@@ -717,7 +717,6 @@ git commit -m "feat: evaluated curated commands and final cleanup"
 - [Google Ads: Generate keyword ideas](https://developers.google.com/google-ads/api/docs/keyword-planning/generate-keyword-ideas)
 - [DataForSEO OpenAPI](https://github.com/dataforseo/OpenApiDocumentation)
 - [DataForSEO API sandbox](https://docs.dataforseo.com/v3/appendix/sandbox/)
-- [argc v7.5.0 release](https://github.com/ethan-huo/argc/releases/tag/v7.5.0)
 - [Bing Webmaster API protocols](https://learn.microsoft.com/en-us/bingwebmaster/api-protocols)
 - [Bing Webmaster API access methods](https://learn.microsoft.com/en-us/bingwebmaster/getting-access)
 - [GSC Discovery document](https://searchconsole.googleapis.com/$discovery/rest?version=v1)
